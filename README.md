@@ -169,6 +169,8 @@ npm start
 
 ## トラブルシューティング
 
+- **外出先アクセス(URL)がうまくいかない**: まず `npm run doctor` を実行してください。
+  設定・cloudflaredの有無・Cloudflareへの到達性などを自動チェックし、直すべき点を教えてくれます。
 - **スマホから開けない**: PCのファイアウォールで対象ポート(既定8765)を許可してください。PCとスマホが同じWi-Fiか確認。
 - **カメラ映像が出ない**: PCに `ffmpeg` が入っているか、`config.json` の `camera.device` が正しいか確認（`npm run setup` で一覧確認）。
 - **Linuxで電源操作が効かない**: `systemctl`/`loginctl` が使えるか、権限（polkit/sudo）を確認してください。

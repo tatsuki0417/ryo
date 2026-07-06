@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/server.js",
     "setup": "node src/setup.js",
-    "install-tunnel": "node src/install-cloudflared.js"
+    "install-tunnel": "node src/install-cloudflared.js",
+    "doctor": "node src/doctor.js"
   },
   "engines": {
     "node": ">=18"
