@@ -5,6 +5,9 @@ config.json
 node_modules/
 npm-debug.log*
 
+# 自動ダウンロードした cloudflared バイナリ
+bin/
+
 # OS
 .DS_Store
 Thumbs.db

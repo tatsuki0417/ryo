@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { resolveCloudflared } from "./install-cloudflared.js";
 
 /**
  * Cloudflare Tunnel(cloudflared) を起動して、外出先からアクセスできる
@@ -23,16 +24,19 @@ export class CloudflareTunnel {
       ? ["tunnel", "--no-autoupdate", "run", "--token", this.token]
       : ["tunnel", "--no-autoupdate", "--url", `http://localhost:${this.port}`];
 
+    const bin = resolveCloudflared() || "cloudflared";
     console.log("[tunnel] cloudflared を起動します…");
     try {
-      this.proc = spawn("cloudflared", args, { stdio: ["ignore", "pipe", "pipe"] });
+      this.proc = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
     } catch (err) {
       this._fail(err);
       return;
     }
 
+    let logTail = "";
     const scan = (buf) => {
       const text = buf.toString();
+      logTail = (logTail + text).slice(-2000); // 失敗時の原因表示用に末尾を保持
       // クイックトンネルのURLを拾う
       const m = text.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/i);
       if (m && !this.publicUrl) {
@@ -47,7 +51,19 @@ export class CloudflareTunnel {
     this.proc.on("close", (code) => {
       // 起動そのものに失敗した場合(_fail)は既に案内済みなので二重表示しない
       if (!this.failed && !this.stopping && code && code !== 0) {
-        console.error(`[tunnel] cloudflared が終了しました (code ${code})`);
+        console.error(`[tunnel] cloudflared が異常終了しました (code ${code})`);
+        // cloudflared 自身のエラー行を見せると原因が分かりやすい
+        const errLines = logTail
+          .split("\n")
+          .filter((l) => /ERR|error|failed|unable|refused/i.test(l))
+          .slice(-4);
+        if (errLines.length) {
+          console.error("[tunnel] cloudflared のエラー:");
+          for (const l of errLines) console.error("   " + l.trim());
+        }
+        console.error(
+          "[tunnel] ネット接続やファイアウォールを確認し、再度 `npm start` してください。"
+        );
       }
       this.proc = null;
     });

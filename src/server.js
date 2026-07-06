@@ -10,6 +10,7 @@ import { issueToken, verifyToken, checkPin, extractToken, LoginGuard } from "./a
 import { availableActions, runAction, getCurrentOS } from "./power.js";
 import { CameraStreamer } from "./camera.js";
 import { CloudflareTunnel } from "./tunnel.js";
+import { resolveCloudflared, installCloudflared } from "./install-cloudflared.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "..", "public");
@@ -219,7 +220,7 @@ server.listen(config.port, config.host, () => {
 });
 
 let tunnel = null;
-function startTunnelIfEnabled() {
+async function startTunnelIfEnabled() {
   if (!config.tunnel?.enabled) return;
 
   // インターネット公開時は短いPINが危険なので警告する
@@ -227,6 +228,20 @@ function startTunnelIfEnabled() {
     console.log("  ⚠️  外出先アクセスを有効化していますが PIN が短いです。");
     console.log("     インターネット公開時は 6桁以上（できれば英数の長いパスワード）を推奨します。");
     console.log("");
+  }
+
+  // cloudflared が無ければ自動でダウンロードして設置する（手動インストール不要）
+  if (!resolveCloudflared()) {
+    console.log("  cloudflared が見つからないので自動でダウンロードします…");
+    try {
+      await installCloudflared();
+    } catch (err) {
+      console.error("  ⚠️  cloudflared の自動インストールに失敗しました:", err.message);
+      console.error(
+        "     手動インストール → https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
+      );
+      return;
+    }
   }
 
   tunnel = new CloudflareTunnel({

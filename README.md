@@ -88,18 +88,25 @@ npm start
 自宅のWi-Fiの外（モバイル回線など）からでもスマホのブラウザで操作できます。
 **ポート開放やルーター設定は不要**で、Cloudflareが自動でHTTPS化してくれます。
 
-### 1. cloudflared をPCにインストール
-
-- [公式ダウンロードページ](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
-- 例）macOS: `brew install cloudflared` / Windows: `winget install --id Cloudflare.cloudflared`
-
-### 2. 設定を有効化して起動
+### 設定を有効化して起動するだけ（cloudflared は自動でダウンロードされます）
 
 `config.json` の `tunnel.enabled` を `true` にして `npm start` するだけ。
 
 ```jsonc
 "tunnel": { "enabled": true, "provider": "cloudflare", "token": "", "hostname": "" }
 ```
+
+**`cloudflared` が入っていなくても大丈夫です。** 初回起動時に、お使いのOS/CPUに合った
+公式バイナリを自動でダウンロードして `bin/` に設置します（手動インストール不要）。
+
+```
+  cloudflared が見つからないので自動でダウンロードします…
+  [install] 完了: .../ryo/bin/cloudflared
+```
+
+> 先に入れておきたい場合は `npm run install-tunnel` でダウンロードだけ実行できます。
+> `brew install cloudflared` や `winget install --id Cloudflare.cloudflared` など、
+> 自分で入れた `cloudflared`（PATH上）があればそちらが優先して使われます。
 
 起動時に、外出先からアクセスできる公開URLが表示されます:
 
