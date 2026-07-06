@@ -4,6 +4,7 @@
 
 - **電源操作**: スリープ / 画面ロック / ログオフ / 再起動 / シャットダウン をスマホから選んで実行
 - **カメラ**: PCのWebカメラ（家カメラ）の映像をスマホでライブ表示＋スナップショット保存
+- **外出先からもOK**: Cloudflare Tunnel 連携で、モバイル回線でもスマホのブラウザから操作（ポート開放不要・自動HTTPS）
 - **アプリ不要**: PC側で小さなサーバーを起動し、スマホは **ブラウザで開くだけ**
 - **クロスプラットフォーム**: Windows / macOS / Linux（OSを自動判別）
 - **追加インストール不要**: Node.js標準機能のみ（カメラを使う場合だけ `ffmpeg` が必要）
@@ -62,6 +63,9 @@ npm start
 | `pin` | スマホで入力する暗証番号 | ランダム4桁 |
 | `allowedActions` | 許可する電源操作 | 全部 |
 | `confirmDangerousActions` | 危険な操作(再起動/シャットダウン等)に確認ダイアログを出す | `true` |
+| `tunnel.enabled` | 外出先アクセス(Cloudflare Tunnel)を有効化 | `false` |
+| `tunnel.token` | 固定URL用の名前付きトンネルのトークン（空ならお試しURL） | `""` |
+| `tunnel.hostname` | 名前付きトンネルのホスト名（表示用） | `""` |
 | `camera.enabled` | カメラ機能の有効/無効 | `true` |
 | `camera.device` | カメラデバイス名/番号（`auto`で自動） | `auto` |
 | `camera.resolution` | 解像度 | `1280x720` |
@@ -76,6 +80,43 @@ npm start
 - **Windows (dshow)**: デバイス名。例 `"Integrated Camera"`
 - **macOS (avfoundation)**: 番号。例 `"0"`
 - **Linux (v4l2)**: パス。例 `"/dev/video0"`
+
+---
+
+## 外出先から使う（Cloudflare Tunnel）📡
+
+自宅のWi-Fiの外（モバイル回線など）からでもスマホのブラウザで操作できます。
+**ポート開放やルーター設定は不要**で、Cloudflareが自動でHTTPS化してくれます。
+
+### 1. cloudflared をPCにインストール
+
+- [公式ダウンロードページ](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
+- 例）macOS: `brew install cloudflared` / Windows: `winget install --id Cloudflare.cloudflared`
+
+### 2. 設定を有効化して起動
+
+`config.json` の `tunnel.enabled` を `true` にして `npm start` するだけ。
+
+```jsonc
+"tunnel": { "enabled": true, "provider": "cloudflare", "token": "", "hostname": "" }
+```
+
+起動時に、外出先からアクセスできる公開URLが表示されます:
+
+```
+  🌍 外出先からアクセスできる公開URL（モバイル回線でもOK）:
+    → https://random-words-1234.trycloudflare.com
+```
+
+このURLをスマホのブラウザで開けば、外出先からでもPINログインして操作できます。
+
+### お試しURL vs 固定URL
+
+- **お試し（token空）**: 起動のたびに `xxx.trycloudflare.com` の**ランダムURLが変わります**。まず試すならこれでOK。
+- **固定URL（token設定）**: 自分のドメインで**URLを固定**したい場合。[Cloudflare Zero Trust](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) でトンネルを作成し、発行された **トンネルトークン** を `tunnel.token` に、公開ホスト名を `tunnel.hostname` に設定します。スマホにブックマークして常用するならこちらが便利です。
+
+> ⚠️ **外出先アクセスを有効にすると、URLを知っていれば誰でもログイン画面に到達できます。**
+> PINは必ず **6桁以上（できれば英数の長いパスワード）** にしてください。連続失敗すると自動でロックされます。
 
 ---
 
@@ -98,11 +139,13 @@ npm start
 
 このツールはPCの電源操作という強い権限を扱います。次の点に注意してください。
 
-- **PINは必ず変更する**（`config.json` はコミットされません＝`.gitignore`済み）
-- 通信は **同じLAN内での利用を想定**しています。認証はPIN＋署名トークン方式ですが、
-  **平文HTTP**です。インターネットに直接公開しないでください。
-- 外出先から使いたい場合は、[Tailscale](https://tailscale.com/) などのVPNや、
-  リバースプロキシでのHTTPS化＋Basic認証などを重ねることを強く推奨します。
+- **PINは必ず変更する**（`config.json` はコミットされません＝`.gitignore`済み）。
+  特に外出先アクセス（トンネル）を使う場合は **6桁以上／長いパスワード** にしてください。
+- **総当たり対策**: PINを連続で間違えると待ち時間が延び、しきい値を超えると一定時間ロックされます。
+- **外出先アクセスは Cloudflare Tunnel 経由を推奨**。Cloudflareが自動でHTTPS化するので通信は暗号化されます。
+  ルーターのポート開放でLANを直接公開するのは避けてください（平文HTTP＋ポート開放は危険）。
+- さらに強固にしたい場合は、Cloudflare Zero Trust の Access ポリシー（メール認証など）を
+  トンネルの手前に重ねると、ログイン画面に到達する前段でアクセスを制限できます。
 - サーバーを再起動するとトークンは無効化され、スマホで再ログインが必要になります。
 
 ---

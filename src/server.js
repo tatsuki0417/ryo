@@ -6,15 +6,17 @@ import { dirname, join, extname, normalize } from "node:path";
 import { networkInterfaces } from "node:os";
 
 import { loadConfig } from "./config.js";
-import { issueToken, verifyToken, checkPin, extractToken } from "./auth.js";
-import { availableActions, runAction, getCurrentOS, ACTION_LABELS } from "./power.js";
+import { issueToken, verifyToken, checkPin, extractToken, LoginGuard } from "./auth.js";
+import { availableActions, runAction, getCurrentOS } from "./power.js";
 import { CameraStreamer } from "./camera.js";
+import { CloudflareTunnel } from "./tunnel.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "..", "public");
 
 const config = loadConfig();
 const camera = config.camera?.enabled ? new CameraStreamer(config.camera) : null;
+const loginGuard = new LoginGuard();
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -48,11 +50,27 @@ const server = createServer(async (req, res) => {
 // ---------- ハンドラ ----------
 
 async function handleLogin(req, res) {
+  const locked = loginGuard.lockedSeconds();
+  if (locked > 0) {
+    return sendJson(res, 429, {
+      ok: false,
+      message: `試行回数が多すぎます。${locked}秒後にもう一度お試しください`,
+    });
+  }
   const body = await readBody(req);
   if (!checkPin(body.pin, config.pin)) {
-    await sleep(500); // 総当たり対策に軽い遅延
-    return sendJson(res, 401, { ok: false, message: "PIN が違います" });
+    const delay = loginGuard.recordFail();
+    await sleep(delay); // 失敗が続くほど待ち時間を延ばす
+    const nowLocked = loginGuard.lockedSeconds();
+    return sendJson(res, nowLocked > 0 ? 429 : 401, {
+      ok: false,
+      message:
+        nowLocked > 0
+          ? `試行回数が多すぎます。${nowLocked}秒後にもう一度お試しください`
+          : "PIN が違います",
+    });
   }
+  loginGuard.recordSuccess();
   return sendJson(res, 200, { ok: true, token: issueToken() });
 }
 
@@ -196,10 +214,38 @@ server.listen(config.port, config.host, () => {
   for (const ip of localIPs()) console.log(`    → http://${ip}:${config.port}`);
   console.log(`    (このPC: http://localhost:${config.port})`);
   console.log("");
+
+  startTunnelIfEnabled();
 });
+
+let tunnel = null;
+function startTunnelIfEnabled() {
+  if (!config.tunnel?.enabled) return;
+
+  // インターネット公開時は短いPINが危険なので警告する
+  if (String(config.pin).length < 6) {
+    console.log("  ⚠️  外出先アクセスを有効化していますが PIN が短いです。");
+    console.log("     インターネット公開時は 6桁以上（できれば英数の長いパスワード）を推奨します。");
+    console.log("");
+  }
+
+  tunnel = new CloudflareTunnel({
+    port: config.port,
+    token: config.tunnel.token,
+    hostname: config.tunnel.hostname,
+  });
+  tunnel.onUrl = (url) => {
+    console.log("  🌍 外出先からアクセスできる公開URL（モバイル回線でもOK）:");
+    console.log(`    → ${url}`);
+    console.log("     ※ このURLは他人に知られないよう注意。PINで保護されています。");
+    console.log("");
+  };
+  tunnel.start();
+}
 
 process.on("SIGINT", () => {
   console.log("\n終了します…");
   camera?.stop();
+  tunnel?.stop();
   process.exit(0);
 });

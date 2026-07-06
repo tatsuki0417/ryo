@@ -11,6 +11,12 @@ const DEFAULTS = {
   pin: "1234",
   allowedActions: ["sleep", "shutdown", "restart", "lock", "logoff"],
   confirmDangerousActions: true,
+  tunnel: {
+    enabled: false,
+    provider: "cloudflare",
+    token: "",
+    hostname: "",
+  },
   camera: {
     enabled: true,
     device: "auto",
