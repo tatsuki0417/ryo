@@ -1,0 +1,13 @@
+{
+  "port": 8765,
+  "host": "0.0.0.0",
+  "pin": "1234",
+  "allowedActions": ["sleep", "shutdown", "restart", "lock", "logoff"],
+  "confirmDangerousActions": true,
+  "camera": {
+    "enabled": true,
+    "device": "auto",
+    "resolution": "1280x720",
+    "framerate": 15
+  }
+}

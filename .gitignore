@@ -1,0 +1,13 @@
+# 設定ファイル（PIN やトークンを含むので絶対にコミットしない）
+config.json
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ログ
+*.log
