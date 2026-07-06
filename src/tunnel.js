@@ -79,6 +79,39 @@ export class CloudflareTunnel {
 
   _announce() {
     if (this.onUrl) this.onUrl(this.publicUrl);
+    this._selfCheck();
+  }
+
+  /**
+   * 発行された公開URLへ実際にアクセスして、外から到達できるか自動確認する。
+   * edge への登録に時間がかかるため数回リトライする。
+   * - 成功: トンネルは機能している（開けないならスマホ側ネットワークの問題）
+   * - 失敗: トンネル/接続側の問題（もう少し待つ or 再起動が必要）
+   */
+  async _selfCheck() {
+    if (this._checked) return;
+    this._checked = true;
+    const url = this.publicUrl;
+    for (let i = 0; i < 8 && !this.stopping; i++) {
+      await new Promise((r) => setTimeout(r, 4000));
+      try {
+        const res = await fetch(url + "/", { redirect: "manual" });
+        // 200(ログイン画面) や 401 等が返れば「到達できている」
+        if (res.status >= 200 && res.status < 500) {
+          console.log("  ✅ 公開URLへの接続確認OK。上のURLをスマホのブラウザで開けます。");
+          console.log("     （開けない場合はスマホ側のWi-Fi/回線が原因。モバイル回線で試してください）");
+          console.log("");
+          return;
+        }
+      } catch {
+        /* まだ繋がらない。リトライ */
+      }
+    }
+    if (!this.stopping) {
+      console.log("  ⚠️  公開URLへまだ接続できません。20〜30秒待ってスマホで再読み込みするか、");
+      console.log("     一度 Ctrl+C で止めて `npm start` し直してください。");
+      console.log("");
+    }
   }
 
   _fail(err) {
