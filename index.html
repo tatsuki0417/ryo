@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ぴぽっち ― レトロ育成ペット</title>
+  <meta name="description" content="ブラウザで育てるドット絵のデジタルペット。放置で育つ、なつかしの育成ゲーム。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%9A%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- たまごっち風のたまご型デバイス -->
+  <div class="device">
+    <div class="device-top">
+      <span class="brand">ぴぽっち</span>
+    </div>
+
+    <!-- 液晶画面 -->
+    <div class="screen-frame">
+      <div class="screen">
+        <!-- 上部：名前と日数 -->
+        <div class="hud">
+          <span id="petName" class="hud-name" title="タップで名前を変更">ぴぽ</span>
+          <span id="dayCount" class="hud-day">0日目</span>
+        </div>
+
+        <!-- ペットを描くキャンバス -->
+        <canvas id="screen" width="200" height="150"></canvas>
+
+        <!-- 今日のひとこと -->
+        <div id="message" class="message">…</div>
+
+        <!-- ステータス（■□で表示） -->
+        <div class="status">
+          <div><span class="label">たべもの</span><span id="bar-hunger" class="bar">■■■■</span></div>
+          <div><span class="label">きげん　</span><span id="bar-mood" class="bar">■■■■</span></div>
+          <div><span class="label">げんき　</span><span id="bar-energy" class="bar">■■■■</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作ボタン（本物のたまごっちは3つ、ここはお世話ぶん増やしてます） -->
+    <div class="buttons">
+      <button id="btn-feed" class="btn">🍙<span>ごはん</span></button>
+      <button id="btn-play" class="btn">🎈<span>あそぶ</span></button>
+      <button id="btn-clean" class="btn">🧹<span>そうじ</span></button>
+      <button id="btn-sleep" class="btn">💤<span>ねる</span></button>
+    </div>
+
+    <!-- シェアボタン（バズの導線） -->
+    <button id="btn-share" class="btn-share">📸 きろくをシェア</button>
+  </div>
+
+  <p class="hint">
+    タブを閉じても時間はすすみます。ときどき会いに来てね。<br />
+    名前をタップすると変更できます。
+  </p>
+
+  <!-- type="module" にすると import が使えます -->
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>

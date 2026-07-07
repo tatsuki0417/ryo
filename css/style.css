@@ -1,0 +1,165 @@
+/* ===================================================================
+   style.css ― たまごっち風デバイスの見た目
+   =================================================================== */
+
+/* CSS変数：色をここでまとめて管理（後で着せ替え課金にも使える） */
+:root {
+  --device: #ff9ec4;        /* デバイス本体のパステルピンク */
+  --device-dark: #e56a9c;
+  --lcd: #b6cc4e;           /* 液晶グリーン */
+  --lcd-dark: #2b3a1a;      /* 液晶の黒ドット */
+  --btn: #fff0f6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 12px;
+  background: repeating-linear-gradient(
+    45deg, #ffd9e8, #ffd9e8 20px, #ffe4ef 20px, #ffe4ef 40px
+  );
+  font-family: 'Courier New', monospace;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* たまご型のデバイス本体 */
+.device {
+  width: 340px;
+  max-width: 92vw;
+  background: linear-gradient(160deg, var(--device), var(--device-dark));
+  border-radius: 50% 50% 46% 46% / 42% 42% 58% 58%;
+  padding: 40px 28px 32px;
+  box-shadow:
+    inset 0 6px 20px rgba(255, 255, 255, 0.5),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.18),
+    0 18px 40px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.device-top { margin-bottom: 14px; }
+.brand {
+  font-weight: bold;
+  font-size: 18px;
+  color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 1px 1px 0 var(--device-dark);
+}
+
+/* 液晶の外枠（黒いフチ） */
+.screen-frame {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* 液晶画面そのもの */
+.screen {
+  background: var(--lcd);
+  border-radius: 8px;
+  padding: 8px;
+  position: relative;
+  /* 走査線っぽい質感をうっすら乗せる */
+  background-image:
+    repeating-linear-gradient(
+      0deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.04) 2px, transparent 2px, transparent 4px
+    );
+}
+
+/* 画面上部のHUD（名前・日数） */
+.hud {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--lcd-dark);
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+.hud-name { cursor: pointer; border-bottom: 1px dotted var(--lcd-dark); }
+
+/* キャンバス（ペット描画エリア） */
+canvas {
+  display: block;
+  margin: 0 auto;
+  image-rendering: pixelated; /* 拡大してもドットをカクッとさせる */
+}
+
+/* 今日のひとこと */
+.message {
+  min-height: 32px;
+  font-size: 12px;
+  color: var(--lcd-dark);
+  font-weight: bold;
+  padding: 4px 6px;
+  line-height: 1.4;
+}
+
+/* ステータス表示 */
+.status {
+  font-size: 12px;
+  color: var(--lcd-dark);
+  text-align: left;
+  padding: 4px 6px 2px;
+  line-height: 1.6;
+}
+.status .label { display: inline-block; width: 68px; }
+.status .bar { letter-spacing: 1px; }
+
+/* お世話ボタン */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+.btn {
+  background: var(--btn);
+  border: none;
+  border-radius: 14px;
+  padding: 10px 4px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--device-dark);
+  transition: transform 0.05s, box-shadow 0.05s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.btn span { font-size: 9px; color: var(--device-dark); font-weight: bold; }
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--device-dark);
+}
+
+/* シェアボタン */
+.btn-share {
+  margin-top: 16px;
+  width: 100%;
+  background: #fff;
+  border: 2px solid var(--device-dark);
+  border-radius: 20px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--device-dark);
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--device-dark);
+}
+.btn-share:active { transform: translateY(4px); box-shadow: 0 0 0 var(--device-dark); }
+
+.hint {
+  font-size: 11px;
+  color: #a15b7d;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 340px;
+}
