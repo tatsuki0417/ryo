@@ -1,165 +1,338 @@
 /* ===================================================================
-   style.css ― たまごっち風デバイスの見た目
+   style.css ― マイホムペ
+   前半：アプリの操作画面（今どきの見た目）
+   後半：ホムペのプレビュー（あえて2000年代のダサ楽しい見た目）
    =================================================================== */
-
-/* CSS変数：色をここでまとめて管理（後で着せ替え課金にも使える） */
-:root {
-  --device: #ff9ec4;        /* デバイス本体のパステルピンク */
-  --device-dark: #e56a9c;
-  --lcd: #b6cc4e;           /* 液晶グリーン */
-  --lcd-dark: #2b3a1a;      /* 液晶の黒ドット */
-  --btn: #fff0f6;
-}
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px 12px;
-  background: repeating-linear-gradient(
-    45deg, #ffd9e8, #ffd9e8 20px, #ffe4ef 20px, #ffe4ef 40px
-  );
-  font-family: 'Courier New', monospace;
-  -webkit-user-select: none;
-  user-select: none;
+  font-family: -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background: #f3f4f8;
+  color: #222;
+  padding-bottom: 80px; /* 下部バーのぶん空ける */
 }
 
-/* たまご型のデバイス本体 */
-.device {
-  width: 340px;
-  max-width: 92vw;
-  background: linear-gradient(160deg, var(--device), var(--device-dark));
-  border-radius: 50% 50% 46% 46% / 42% 42% 58% 58%;
-  padding: 40px 28px 32px;
-  box-shadow:
-    inset 0 6px 20px rgba(255, 255, 255, 0.5),
-    inset 0 -10px 24px rgba(0, 0, 0, 0.18),
-    0 18px 40px rgba(0, 0, 0, 0.25);
-  text-align: center;
-}
-
-.device-top { margin-bottom: 14px; }
-.brand {
-  font-weight: bold;
-  font-size: 18px;
+/* --- ヘッダー --- */
+.app-header {
+  background: linear-gradient(120deg, #6a5acd, #8a63d2);
   color: #fff;
-  letter-spacing: 2px;
-  text-shadow: 1px 1px 0 var(--device-dark);
-}
-
-/* 液晶の外枠（黒いフチ） */
-.screen-frame {
-  background: #1a1a1a;
-  border-radius: 16px;
-  padding: 10px;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
-}
-
-/* 液晶画面そのもの */
-.screen {
-  background: var(--lcd);
-  border-radius: 8px;
-  padding: 8px;
-  position: relative;
-  /* 走査線っぽい質感をうっすら乗せる */
-  background-image:
-    repeating-linear-gradient(
-      0deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.04) 2px, transparent 2px, transparent 4px
-    );
-}
-
-/* 画面上部のHUD（名前・日数） */
-.hud {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--lcd-dark);
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-.hud-name { cursor: pointer; border-bottom: 1px dotted var(--lcd-dark); }
-
-/* キャンバス（ペット描画エリア） */
-canvas {
-  display: block;
-  margin: 0 auto;
-  image-rendering: pixelated; /* 拡大してもドットをカクッとさせる */
-}
-
-/* 今日のひとこと */
-.message {
-  min-height: 32px;
-  font-size: 12px;
-  color: var(--lcd-dark);
-  font-weight: bold;
-  padding: 4px 6px;
-  line-height: 1.4;
-}
-
-/* ステータス表示 */
-.status {
-  font-size: 12px;
-  color: var(--lcd-dark);
-  text-align: left;
-  padding: 4px 6px 2px;
-  line-height: 1.6;
-}
-.status .label { display: inline-block; width: 68px; }
-.status .bar { letter-spacing: 1px; }
-
-/* お世話ボタン */
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 20px;
-}
-.btn {
-  background: var(--btn);
-  border: none;
-  border-radius: 14px;
-  padding: 10px 4px;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 4px 0 var(--device-dark);
-  transition: transform 0.05s, box-shadow 0.05s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.btn span { font-size: 9px; color: var(--device-dark); font-weight: bold; }
-.btn:active {
-  transform: translateY(4px);
-  box-shadow: 0 0 0 var(--device-dark);
-}
-
-/* シェアボタン */
-.btn-share {
-  margin-top: 16px;
-  width: 100%;
-  background: #fff;
-  border: 2px solid var(--device-dark);
-  border-radius: 20px;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--device-dark);
-  cursor: pointer;
-  box-shadow: 0 4px 0 var(--device-dark);
-}
-.btn-share:active { transform: translateY(4px); box-shadow: 0 0 0 var(--device-dark); }
-
-.hint {
-  font-size: 11px;
-  color: #a15b7d;
+  padding: 14px 16px;
   text-align: center;
-  line-height: 1.6;
-  max-width: 340px;
+}
+.app-logo { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+.app-tag { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+
+/* --- レイアウト：PCは横並び、スマホは縦 --- */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 980px;
+  margin: 16px auto;
+  padding: 0 12px;
+}
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* --- 編集パネル --- */
+.editor {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  height: fit-content;
+}
+.editor-title { margin: 0 0 12px; font-size: 16px; }
+.field { display: block; margin-bottom: 14px; }
+.field > span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 4px;
+}
+.field input[type="text"],
+.field input[type="url"],
+.field textarea {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d5d8e0;
+  border-radius: 9px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.field input:focus, .field textarea:focus {
+  outline: none;
+  border-color: #8a63d2;
+}
+.field .check {
+  display: block;
+  font-size: 13px;
+  margin: 6px 0;
+  cursor: pointer;
+}
+
+/* テーマ選択チップ */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1px solid #cfc3ef;
+  background: #f6f3ff;
+  color: #5b4aa8;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.chip.active { background: #6a5acd; color: #fff; border-color: #6a5acd; }
+
+/* --- プレビュー --- */
+.preview-wrap { min-width: 0; }
+.preview-label { text-align: center; font-size: 12px; color: #888; margin-bottom: 6px; }
+
+/* --- 下部アクションバー --- */
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #e2e4ea;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  justify-content: center;
+}
+.act {
+  flex: 1;
+  max-width: 220px;
+  border: 1px solid #d5d8e0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 11px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.act.primary { background: #6a5acd; color: #fff; border-color: #6a5acd; }
+.act.on { background: #ffe66d; border-color: #f5c518; }
+
+/* --- 閲覧モードの切り替え --- */
+.view-cta { display: none; text-align: center; padding: 12px; }
+.cta-btn {
+  background: #ff5c8a;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d63e6c;
+}
+body.view-mode #editor { display: none; }
+body.view-mode .view-cta { display: block; }
+body.view-mode .layout { grid-template-columns: 1fr; max-width: 620px; }
+
+/* --- トースト --- */
+#toast {
+  position: fixed;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #222;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s;
+  z-index: 50;
+  max-width: 90vw;
+  text-align: center;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===================================================================
+   ここから下：ホムペのプレビュー本体（あえてレトロにダサく）
+   =================================================================== */
+.homepage {
+  border: 3px ridge #999;
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 300px;
+  font-family: 'MS PGothic', 'Hiragino Sans', sans-serif;
+  color: #000;
+}
+
+/* 背景テーマ（themes.js の id と対応） */
+.homepage[data-theme="star"] {
+  background-color: #0a1030;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 70% 60%, #fff, transparent),
+    radial-gradient(2px 2px at 40% 80%, #fff, transparent),
+    radial-gradient(1px 1px at 85% 20%, #ffe, transparent),
+    radial-gradient(1px 1px at 55% 45%, #fff, transparent);
+  color: #fff;
+}
+.homepage[data-theme="brick"] {
+  background-color: #7a3b2e;
+  background-image:
+    linear-gradient(335deg, #6a3226 23px, transparent 23px),
+    linear-gradient(155deg, #6a3226 23px, transparent 23px),
+    linear-gradient(335deg, #6a3226 23px, transparent 23px),
+    linear-gradient(155deg, #6a3226 23px, transparent 23px);
+  background-size: 58px 58px;
+  background-position: 0 2px, 4px 35px, 29px 31px, 34px 6px;
+  color: #fff;
+}
+.homepage[data-theme="tile"] {
+  background-color: #2e6a4f;
+  background-image:
+    linear-gradient(45deg, #285f47 25%, transparent 25%, transparent 75%, #285f47 75%),
+    linear-gradient(45deg, #285f47 25%, transparent 25%, transparent 75%, #285f47 75%);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  color: #fff;
+}
+.homepage[data-theme="dot"] {
+  background-color: #ffd9e8;
+  background-image: radial-gradient(#ff8fb3 18%, transparent 20%);
+  background-size: 24px 24px;
+  color: #5a2340;
+}
+.homepage[data-theme="sky"] {
+  background: linear-gradient(#7ec8ff, #d4f0ff);
+  color: #0a3a5a;
+}
+.homepage[data-theme="note"] {
+  background-color: #fffef2;
+  background-image: repeating-linear-gradient(#fffef2, #fffef2 27px, #c9d7e8 28px);
+  color: #333;
+}
+
+.hp-inner { padding: 14px; }
+
+/* 流れる文字（マーキー） */
+.hp-marquee {
+  background: #000;
+  color: #0f0;
+  font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.hp-marquee span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 14s linear infinite;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+/* タイトル */
+.hp-title {
+  text-align: center;
+  font-size: 22px;
+  margin: 12px 0;
+  color: #ffe600;
+  text-shadow: 2px 2px 0 #d60000, -1px -1px 0 #000;
+  font-weight: 900;
+}
+
+/* 工事中バナー */
+.hp-construction {
+  text-align: center;
+  background: repeating-linear-gradient(45deg, #ffd400, #ffd400 12px, #000 12px, #000 24px);
+  color: #fff;
+  font-weight: bold;
+  padding: 6px;
+  margin: 10px 0;
+  border: 2px solid #000;
+  text-shadow: 1px 1px 2px #000;
+}
+.blink { animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+
+/* 情報ボックス */
+.hp-box {
+  background: rgba(255, 255, 255, 0.85);
+  color: #222;
+  border: 2px groove #ccc;
+  border-radius: 3px;
+  margin: 12px 0;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.hp-box p { margin: 4px 0; }
+.hp-box-head {
+  font-weight: bold;
+  color: #d6006e;
+  border-bottom: 1px dashed #d6006e;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+}
+.hp-bio { white-space: pre-wrap; }
+.hp-links { margin: 0; padding-left: 4px; list-style: none; }
+.hp-links li { margin: 4px 0; }
+.hp-links a { color: #0000ee; }
+
+/* 訪問者ノート */
+.hp-guestbook { margin-bottom: 8px; }
+.hp-guest-item {
+  border-bottom: 1px dotted #bbb;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.hp-dim { color: #999; font-size: 13px; }
+.hp-guest-form { display: flex; flex-wrap: wrap; gap: 4px; }
+.hp-guest-form input {
+  flex: 1;
+  min-width: 80px;
+  padding: 5px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.hp-guest-form .gb-send {
+  background: #d6006e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* アクセスカウンター（黒背景＋デジタル数字） */
+.hp-counter {
+  text-align: center;
+  margin: 14px 0;
+  font-size: 13px;
+}
+.hp-counter-digits {
+  display: inline-block;
+  background: #000;
+  color: #33ff5b;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  letter-spacing: 3px;
+  padding: 2px 6px;
+  border: 1px solid #33ff5b;
+  border-radius: 2px;
+}
+
+.hp-footer {
+  text-align: center;
+  font-size: 11px;
+  margin-top: 16px;
+  opacity: 0.85;
 }

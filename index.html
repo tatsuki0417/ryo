@@ -2,61 +2,87 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ぴぽっち ― レトロ育成ペット</title>
-  <meta name="description" content="ブラウザで育てるドット絵のデジタルペット。放置で育つ、なつかしの育成ゲーム。" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%9A%3C/text%3E%3C/svg%3E" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>マイホムペ ― レトロ個人ホームページ製作所</title>
+  <meta name="description" content="スマホで数分で作れる、2000年代風のなつかしい自分だけのホームページ。工事中GIF・アクセスカウンター・BGM付き。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- たまごっち風のたまご型デバイス -->
-  <div class="device">
-    <div class="device-top">
-      <span class="brand">ぴぽっち</span>
-    </div>
+  <!-- ヘッダー -->
+  <header class="app-header">
+    <div class="app-logo">🏠 マイホムペ</div>
+    <div class="app-tag">なつかしの「自分のホームページ」を、いま作ろう</div>
+  </header>
 
-    <!-- 液晶画面 -->
-    <div class="screen-frame">
-      <div class="screen">
-        <!-- 上部：名前と日数 -->
-        <div class="hud">
-          <span id="petName" class="hud-name" title="タップで名前を変更">ぴぽ</span>
-          <span id="dayCount" class="hud-day">0日目</span>
-        </div>
-
-        <!-- ペットを描くキャンバス -->
-        <canvas id="screen" width="200" height="150"></canvas>
-
-        <!-- 今日のひとこと -->
-        <div id="message" class="message">…</div>
-
-        <!-- ステータス（■□で表示） -->
-        <div class="status">
-          <div><span class="label">たべもの</span><span id="bar-hunger" class="bar">■■■■</span></div>
-          <div><span class="label">きげん　</span><span id="bar-mood" class="bar">■■■■</span></div>
-          <div><span class="label">げんき　</span><span id="bar-energy" class="bar">■■■■</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 操作ボタン（本物のたまごっちは3つ、ここはお世話ぶん増やしてます） -->
-    <div class="buttons">
-      <button id="btn-feed" class="btn">🍙<span>ごはん</span></button>
-      <button id="btn-play" class="btn">🎈<span>あそぶ</span></button>
-      <button id="btn-clean" class="btn">🧹<span>そうじ</span></button>
-      <button id="btn-sleep" class="btn">💤<span>ねる</span></button>
-    </div>
-
-    <!-- シェアボタン（バズの導線） -->
-    <button id="btn-share" class="btn-share">📸 きろくをシェア</button>
+  <!-- 閲覧モード時だけ出る：自分も作る導線 -->
+  <div class="view-cta">
+    <button id="btn-make-own" class="cta-btn">＋ 自分もホムペを作る</button>
   </div>
 
-  <p class="hint">
-    タブを閉じても時間はすすみます。ときどき会いに来てね。<br />
-    名前をタップすると変更できます。
-  </p>
+  <main class="layout">
+    <!-- 編集パネル（編集モードのみ表示） -->
+    <section class="editor" id="editor">
+      <h2 class="editor-title">✏️ ホムペをつくる</h2>
 
-  <!-- type="module" にすると import が使えます -->
-  <script type="module" src="js/game.js"></script>
+      <label class="field">
+        <span>サイト名</span>
+        <input id="in-siteName" type="text" maxlength="40" />
+      </label>
+
+      <div class="field">
+        <span>背景テーマ</span>
+        <div id="theme-chips" class="chips"></div>
+      </div>
+
+      <label class="field">
+        <span>管理人のなまえ</span>
+        <input id="in-ownerName" type="text" maxlength="16" />
+      </label>
+
+      <label class="field">
+        <span>ひとこと</span>
+        <input id="in-hitokoto" type="text" maxlength="40" />
+      </label>
+
+      <label class="field">
+        <span>じこしょうかい</span>
+        <textarea id="in-bio" rows="4" maxlength="300"></textarea>
+      </label>
+
+      <label class="field">
+        <span>流れる文字（マーキー）</span>
+        <input id="in-marquee" type="text" maxlength="80" />
+      </label>
+
+      <div class="field">
+        <span>リンク（相互リンクなど）</span>
+        <input id="in-link1-title" type="text" placeholder="リンクの名前" maxlength="24" />
+        <input id="in-link1-url" type="url" placeholder="https://（空でもOK）" />
+      </div>
+
+      <div class="field">
+        <span>パーツ</span>
+        <label class="check"><input id="pt-construction" type="checkbox" /> 🚧 工事中バナー</label>
+        <label class="check"><input id="pt-counter" type="checkbox" /> 🔢 アクセスカウンター</label>
+        <label class="check"><input id="pt-guestbook" type="checkbox" /> 📖 訪問者ノート</label>
+      </div>
+    </section>
+
+    <!-- プレビュー（＝できあがるホムペ本体。両モードで表示） -->
+    <section class="preview-wrap">
+      <div class="preview-label">▼ プレビュー ▼</div>
+      <div id="preview" class="homepage"></div>
+    </section>
+  </main>
+
+  <!-- 下部アクションバー -->
+  <div class="action-bar">
+    <button id="btn-bgm" class="act">♪ BGM</button>
+    <button id="btn-share-url" class="act primary">🔗 URLをコピー</button>
+    <button id="btn-share-banner" class="act">📷 バナー保存</button>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
