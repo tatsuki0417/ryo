@@ -14,6 +14,9 @@ export const THEMES = [
   { id: 'dot',    label: '水玉', premium: false },
   { id: 'sky',    label: '青空', premium: false },
   { id: 'note',   label: 'ノート', premium: false },
+  { id: 'sakura', label: 'さくら', premium: false },
+  { id: 'lame',   label: 'ラメ', premium: false },
+  { id: 'matrix', label: 'マトリックス', premium: false },
   // 例：将来の課金テーマ（premium: true にして販売）
   // { id: 'galaxy', label: 'ギャラクシー✨', premium: true },
 ];

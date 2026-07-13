@@ -16,7 +16,11 @@ export function defaultData() {
     hitokoto: 'はじめまして！ゆっくりしていってね(*^^*)',
     bio: 'ここに自己紹介を書いてね。\nすきなもの、さいきんハマってること、なんでもOK！\n\n相互リンク募集中です♪',
     theme: 'star',           // 背景テーマ（themes.js 参照）
+    titleStyle: 'rainbow',   // タイトルの装飾（rainbow / fire / simple）
+    avatar: '',              // プロフィール画像（プリ画像）… 縮小したdataURL
+    avatarFrame: 'sparkle',  // 画像の飾り枠（sparkle / heart / simple）
     marquee: '☆★ ようこそマイホームページへ ★☆　更新がんばってます！　キリ番踏んだら教えてね〜',
+    news: '2026.07.13 ホームページを開設しました！\n2026.07.13 プロフィールを更新しました',
     links: [
       { title: '相互リンク募集中！', url: '' },
       { title: 'お気に入りのサイト', url: '' },
@@ -26,6 +30,10 @@ export function defaultData() {
       counter: true,       // アクセスカウンター
       bgm: true,           // BGMボタン
       guestbook: true,     // 訪問者ノート
+      fortune: true,       // 今日の運勢（占い）
+      clap: true,          // Web拍手
+      news: true,          // 更新履歴（What's New）
+      sparkleCursor: true, // キラキラ追従カーソル
     },
   };
 }

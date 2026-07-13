@@ -31,8 +31,23 @@
       </label>
 
       <div class="field">
+        <span>タイトルの装飾</span>
+        <div id="title-chips" class="chips"></div>
+      </div>
+
+      <div class="field">
         <span>背景テーマ</span>
         <div id="theme-chips" class="chips"></div>
+      </div>
+
+      <div class="field">
+        <span>プロフィール画像（プリ画像）</span>
+        <input id="in-avatar" type="file" accept="image/*" />
+        <div class="avatar-frame-row">
+          <span class="mini-label">飾り枠：</span>
+          <div id="frame-chips" class="chips"></div>
+        </div>
+        <button id="btn-avatar-remove" type="button" class="mini-btn">画像を消す</button>
       </div>
 
       <label class="field">
@@ -51,6 +66,11 @@
       </label>
 
       <label class="field">
+        <span>更新履歴（What's New）</span>
+        <textarea id="in-news" rows="3" maxlength="300"></textarea>
+      </label>
+
+      <label class="field">
         <span>流れる文字（マーキー）</span>
         <input id="in-marquee" type="text" maxlength="80" />
       </label>
@@ -62,10 +82,14 @@
       </div>
 
       <div class="field">
-        <span>パーツ</span>
+        <span>パーツ（組み合わせて自分だけのホムペに！）</span>
         <label class="check"><input id="pt-construction" type="checkbox" /> 🚧 工事中バナー</label>
         <label class="check"><input id="pt-counter" type="checkbox" /> 🔢 アクセスカウンター</label>
         <label class="check"><input id="pt-guestbook" type="checkbox" /> 📖 訪問者ノート</label>
+        <label class="check"><input id="pt-fortune" type="checkbox" /> 🔮 きょうの運勢</label>
+        <label class="check"><input id="pt-clap" type="checkbox" /> 👏 Web拍手</label>
+        <label class="check"><input id="pt-news" type="checkbox" /> 📢 更新履歴</label>
+        <label class="check"><input id="pt-sparkle" type="checkbox" /> ✨ キラキラ追従カーソル</label>
       </div>
     </section>
 
