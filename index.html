@@ -1,0 +1,708 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>⚡ 反射神経年齢チェッカー</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430;
+    --ink:#e6edf3; --dim:#8b98a9;
+    --cyan:#22d3ee; --lime:#a3e635; --red:#f43f5e; --green:#22c55e;
+    --amber:#fbbf24;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    -webkit-user-select:none; user-select:none;
+    touch-action:manipulation;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  .num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; letter-spacing:.01em;}
+  #app{position:fixed; inset:0; display:flex; align-items:stretch; justify-content:center;}
+  .scene{
+    position:absolute; inset:0;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px 20px calc(24px + env(safe-area-inset-bottom)); text-align:center;
+    opacity:0; transition:opacity .28s ease;
+    max-width:520px; margin:0 auto; left:0; right:0;
+  }
+  .scene.active{display:flex; opacity:1;}
+  .scene.fadeout{opacity:0;}
+
+  h1.logo{font-size:30px; line-height:1.25; margin:0 0 6px; font-weight:900; letter-spacing:.01em;}
+  h1.logo .zap{color:var(--amber); filter:drop-shadow(0 0 8px rgba(251,191,36,.55));}
+  .tagline{color:var(--cyan); font-size:15px; margin:0 0 4px; font-weight:700;}
+  .subline{color:var(--dim); font-size:13px; margin:0 0 34px;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    min-height:56px; min-width:44px; padding:16px 26px; border:0; border-radius:16px;
+    font-size:19px; font-weight:900; cursor:pointer; color:#04121a;
+    background:linear-gradient(135deg,var(--cyan),var(--lime));
+    box-shadow:0 0 0 1px rgba(34,211,238,.25), 0 8px 30px rgba(34,211,238,.28);
+    touch-action:manipulation; transition:transform .08s ease, filter .15s;
+    -webkit-user-select:none; user-select:none;
+  }
+  .btn:active{transform:scale(.96);}
+  .btn.ghost{
+    background:var(--panel2); color:var(--ink); box-shadow:0 0 0 1px #2a3441;
+    font-size:15px; min-height:48px; padding:12px 18px;
+  }
+  .btn.big{font-size:22px; min-height:64px; padding:20px 40px; border-radius:20px;}
+
+  .stagelabel{font-size:12px; letter-spacing:.28em; color:var(--cyan); font-weight:800; margin-bottom:8px;}
+  .stagetitle{font-size:23px; font-weight:900; margin:0 0 6px;}
+  .stagehint{color:var(--dim); font-size:14px; margin:0 0 20px; min-height:20px;}
+
+  .dots{display:flex; gap:9px; justify-content:center; margin-top:26px;}
+  .dot{width:11px; height:11px; border-radius:50%; background:#2a3441; transition:background .2s, transform .2s;}
+  .dot.on{background:var(--cyan); box-shadow:0 0 10px rgba(34,211,238,.7);}
+  .dot.bad{background:var(--red);}
+
+  /* Stage 1 reaction pad */
+  #s1pad{
+    position:relative; width:100%; max-width:340px; height:340px; border-radius:24px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-weight:900; color:#fff; cursor:pointer; user-select:none;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);
+    touch-action:manipulation;
+  }
+  #s1pad.wait{background:radial-gradient(circle at 50% 40%, #7f1d2b, #4c0f1a);}
+  #s1pad.go{background:radial-gradient(circle at 50% 40%, #2fce6a, #10863f); box-shadow:inset 0 0 0 2px rgba(163,230,53,.5), 0 0 40px rgba(34,197,94,.4);}
+  #s1pad.idle{background:var(--panel2); box-shadow:inset 0 0 0 2px #2a3441;}
+  #s1pad .padmain{font-size:30px; line-height:1.3;}
+  #s1pad .padsub{font-size:15px; font-weight:700; opacity:.9; margin-top:8px;}
+  #s1result{font-size:64px; font-weight:900;}
+
+  /* Stage 2 clock */
+  #s2disp{font-size:82px; font-weight:900; line-height:1; margin:10px 0 4px;
+    color:var(--lime); text-shadow:0 0 24px rgba(163,230,53,.35);}
+  #s2disp.hidden{color:var(--dim); text-shadow:none;}
+  #s2unit{font-size:15px; color:var(--dim); margin-bottom:22px;}
+  #s2flash{min-height:26px; font-size:17px; font-weight:800; color:var(--cyan);}
+
+  /* Stage 3 grid */
+  #grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+    width:100%; max-width:320px; margin:6px auto 0; aspect-ratio:1/1;
+  }
+  .cell{
+    display:flex; align-items:center; justify-content:center;
+    background:var(--panel2); border-radius:14px; font-size:34px; font-weight:900;
+    color:var(--ink); min-height:44px; cursor:pointer; touch-action:manipulation;
+    box-shadow:inset 0 0 0 1px #2a3441; transition:transform .06s, background .12s, box-shadow .12s;
+    font-variant-numeric:tabular-nums;
+  }
+  .cell.q{color:var(--dim);}
+  .cell.done{background:linear-gradient(135deg,#0e3b46,#0c2b33); color:var(--cyan);
+    box-shadow:inset 0 0 0 2px var(--cyan), 0 0 16px rgba(34,211,238,.35);}
+  .cell.bad{background:#4c0f1a; box-shadow:inset 0 0 0 2px var(--red);}
+  .cell:active{transform:scale(.95);}
+  #s3hint{margin-top:16px; color:var(--dim); font-size:14px; min-height:20px;}
+
+  /* Result */
+  #result{justify-content:flex-start; padding-top:20px; overflow-y:auto;}
+  #result::-webkit-scrollbar{display:none;}
+  .retry{align-self:center; margin-bottom:14px;}
+  .agewrap{margin:6px 0 2px;}
+  .agelabel{font-size:13px; color:var(--dim); letter-spacing:.2em;}
+  #ageBig{font-size:104px; font-weight:900; line-height:.95; color:var(--cyan);
+    text-shadow:0 0 30px rgba(34,211,238,.45); font-variant-numeric:tabular-nums;}
+  #ageBig .yr{font-size:34px; color:var(--dim); font-weight:800;}
+  .stamp{
+    display:inline-block; margin:10px 0 4px; padding:10px 20px; border-radius:14px;
+    font-size:22px; font-weight:900; color:var(--lime);
+    border:3px solid var(--lime); background:rgba(163,230,53,.08);
+    transform:scale(0) rotate(-14deg); opacity:0;
+  }
+  .stamp.show{animation:stampin .5s cubic-bezier(.2,1.4,.4,1) forwards;}
+  @keyframes stampin{0%{transform:scale(2.6) rotate(-14deg);opacity:0;}60%{opacity:1;}100%{transform:scale(1) rotate(-6deg);opacity:1;}}
+  .best{color:var(--amber); font-weight:800; font-size:15px; min-height:20px; margin-top:6px;}
+  .pct{color:var(--dim); font-size:14px; margin-top:2px;}
+
+  .bars{width:100%; max-width:360px; margin:18px auto 4px; display:flex; flex-direction:column; gap:12px;}
+  .bar{text-align:left;}
+  .bar .bl{display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; color:var(--dim);}
+  .bar .bl b{color:var(--ink);}
+  .track{height:12px; background:var(--panel2); border-radius:8px; overflow:hidden; box-shadow:inset 0 0 0 1px #2a3441;}
+  .fill{height:100%; width:0; border-radius:8px; transition:width .9s cubic-bezier(.2,.9,.3,1);}
+  .fill.c{background:linear-gradient(90deg,var(--cyan),#67e8f9);}
+  .fill.l{background:linear-gradient(90deg,var(--lime),#d9f99d);}
+  .fill.a{background:linear-gradient(90deg,var(--amber),#fde68a);}
+
+  .realage{width:100%; max-width:360px; margin:20px auto 4px;}
+  .realage label{display:block; font-size:13px; color:var(--dim); margin-bottom:6px;}
+  .realage input{
+    width:100%; height:48px; border-radius:12px; border:0; box-shadow:inset 0 0 0 1px #2a3441;
+    background:var(--panel2); color:var(--ink); font-size:18px; text-align:center; padding:0 12px;
+    font-variant-numeric:tabular-nums;
+  }
+  .actions{width:100%; max-width:360px; margin:16px auto 6px; display:flex; flex-direction:column; gap:10px;}
+  .cardwrap{width:100%; max-width:360px; margin:14px auto 8px;}
+  .cardwrap img{width:100%; border-radius:14px; box-shadow:0 0 0 1px #2a3441; display:block;}
+  .cardnote{font-size:12px; color:var(--dim); margin-top:6px;}
+  .toast{
+    position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
+    background:var(--panel2); color:var(--ink); padding:12px 18px; border-radius:12px; font-size:14px; font-weight:700;
+    box-shadow:0 8px 30px rgba(0,0,0,.5), 0 0 0 1px #2a3441; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:50; max-width:90vw;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .foot{color:var(--dim); font-size:11px; margin:12px 0 4px;}
+</style>
+
+<div id="app">
+  <!-- TITLE -->
+  <section class="scene active" id="sc-title">
+    <h1 class="logo"><span class="zap">⚡</span> 反射神経<br>年齢チェッカー</h1>
+    <p class="tagline">3つのテスト・30秒で測定</p>
+    <p class="subline">あなたの反射神経、実年齢より老けてるかも。</p>
+    <button class="btn big" id="startBtn">▶ スタート</button>
+  </section>
+
+  <!-- STAGE 1 -->
+  <section class="scene" id="sc-s1">
+    <div class="stagelabel">STAGE 1 / 3</div>
+    <div class="stagetitle">反応速度</div>
+    <div class="stagehint" id="s1hint">緑になったらすぐタップ！赤で押すとフライング。</div>
+    <div id="s1pad" class="idle">
+      <div class="padmain" id="s1main">タップして開始</div>
+      <div class="padsub" id="s1sub"></div>
+    </div>
+    <div class="dots" id="s1dots"></div>
+  </section>
+
+  <!-- STAGE 2 -->
+  <section class="scene" id="sc-s2">
+    <div class="stagelabel">STAGE 2 / 3</div>
+    <div class="stagetitle">体内時計</div>
+    <div class="stagehint" id="s2hint">5.00秒ちょうどで止めろ。3秒で数字は消える。</div>
+    <div id="s2disp" class="num">0.00</div>
+    <div id="s2unit">秒</div>
+    <button class="btn" id="s2btn">タップして開始</button>
+    <div id="s2flash"></div>
+  </section>
+
+  <!-- STAGE 3 -->
+  <section class="scene" id="sc-s3">
+    <div class="stagelabel">STAGE 3 / 3</div>
+    <div class="stagetitle">動体視力</div>
+    <div class="stagehint" id="s3top">配置を覚えて、1から順にタップ。</div>
+    <div id="grid"></div>
+    <div id="s3hint">タップして開始</div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="scene" id="sc-result">
+    <button class="btn ghost retry" id="retryBtn">↻ もう一回若返る</button>
+    <div class="agewrap">
+      <div class="agelabel">反射神経年齢</div>
+      <div id="ageBig" class="num">--<span class="yr">歳</span></div>
+    </div>
+    <div class="stamp" id="stamp">称号</div>
+    <div class="best" id="bestMsg"></div>
+    <div class="pct" id="pctMsg"></div>
+
+    <div class="bars">
+      <div class="bar"><div class="bl"><span>⚡ 反応速度</span><b id="b1v">-</b></div><div class="track"><div class="fill c" id="b1"></div></div></div>
+      <div class="bar"><div class="bl"><span>⏱ 体内時計</span><b id="b2v">-</b></div><div class="track"><div class="fill l" id="b2"></div></div></div>
+      <div class="bar"><div class="bl"><span>👁 動体視力</span><b id="b3v">-</b></div><div class="track"><div class="fill a" id="b3"></div></div></div>
+    </div>
+
+    <div class="realage">
+      <label for="realInput">実年齢を入れるとシェア文が強くなる（任意）</label>
+      <input id="realInput" class="num" type="number" inputmode="numeric" min="1" max="120" placeholder="例: 26">
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="copyBtn">📋 結果をコピー</button>
+      <button class="btn ghost" id="saveBtn">📷 画像を保存</button>
+    </div>
+
+    <div class="cardwrap" id="cardwrap" style="display:none">
+      <img id="cardImg" alt="結果カード">
+      <div class="cardnote">iPhoneはこの画像を長押し→「写真に追加」で保存できます</div>
+    </div>
+
+    <div class="foot">#反射神経年齢チェッカー</div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+(function(){
+  /* ============ utilities ============ */
+  const $ = s => document.querySelector(s);
+  const now = () => performance.now();
+  const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+  function median(arr){ const a=[...arr].sort((x,y)=>x-y); const n=a.length; return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0; }
+
+  // piecewise-linear, monotonic, clamped to endpoints
+  function pwl(x, pts){
+    if(x<=pts[0][0]) return pts[0][1];
+    for(let i=1;i<pts.length;i++){
+      if(x<=pts[i][0]){
+        const [x0,y0]=pts[i-1], [x1,y1]=pts[i];
+        const t=(x-x0)/(x1-x0);
+        return y0 + t*(y1-y0);
+      }
+    }
+    return pts[pts.length-1][1];
+  }
+  // standard normal CDF (Abramowitz-Stegun 7.1.26 via erf)
+  function erf(x){
+    const s=x<0?-1:1; x=Math.abs(x);
+    const t=1/(1+0.3275911*x);
+    const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+    return s*y;
+  }
+  const normCdf = (x,mu,sd)=> 0.5*(1+erf((x-mu)/(sd*Math.SQRT2)));
+
+  function toast(msg){
+    const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1900);
+  }
+
+  /* ============ scene switching (fade) ============ */
+  const scenes={title:'#sc-title', s1:'#sc-s1', s2:'#sc-s2', s3:'#sc-s3', result:'#sc-result'};
+  let current='title';
+  function showScene(name){
+    if(name===current){ return; }
+    const from=$(scenes[current]);
+    const to=$(scenes[name]);
+    from.classList.add('fadeout');
+    setTimeout(()=>{
+      from.classList.remove('active','fadeout');
+      to.classList.add('active');
+      // reflow then fade in
+      void to.offsetWidth;
+    },260);
+    current=name;
+  }
+
+  /* ============ global state ============ */
+  const ST={};
+  function resetState(){
+    ST.s1={ trial:0, total:5, trials:[], flying:0, phase:'idle', greenAt:0, timer:0, locked:false };
+    ST.s2={ phase:'idle', startAt:0, raf:0, err:0 };
+    ST.s3={ order:[], expect:1, mistaps:0, startAt:0, done:false, locked:false };
+  }
+
+  /* ============ STAGE 1: reaction ============ */
+  const s1pad=$('#s1pad'), s1main=$('#s1main'), s1sub=$('#s1sub'), s1dots=$('#s1dots'), s1hint=$('#s1hint');
+  function s1RenderDots(){
+    s1dots.innerHTML='';
+    for(let i=0;i<ST.s1.total;i++){
+      const d=document.createElement('div'); d.className='dot';
+      if(i<ST.s1.trials.length) d.classList.add('on');
+      s1dots.appendChild(d);
+    }
+  }
+  function s1Begin(){
+    resetState();
+    s1RenderDots();
+    s1SetIdle('タップして開始','5回測ります');
+    ST.s1.phase='idle';
+  }
+  function s1SetIdle(main,sub){
+    s1pad.className='idle'; s1main.textContent=main; s1sub.textContent=sub||'';
+  }
+  function s1NextTrial(){
+    ST.s1.phase='waiting';
+    ST.s1.locked=false;
+    s1pad.className='wait';
+    s1main.textContent='待て…';
+    s1sub.textContent='緑になったら！';
+    const delay=1500+Math.random()*2500; // 1.5s - 4.0s
+    ST.s1.timer=setTimeout(()=>{
+      if(ST.s1.phase!=='waiting') return;
+      ST.s1.phase='go';
+      ST.s1.greenAt=now();
+      s1pad.className='go';
+      s1main.textContent='タップ！';
+      s1sub.textContent='';
+    }, delay);
+  }
+  function s1Down(e){
+    e.preventDefault();
+    const p=ST.s1.phase;
+    if(p==='idle'){ s1NextTrial(); return; }
+    if(ST.s1.locked) return;
+    if(p==='waiting'){
+      // FLYING: pressed before green
+      ST.s1.locked=true;
+      clearTimeout(ST.s1.timer);
+      ST.s1.flying++;
+      s1pad.className='idle';
+      s1main.textContent='フライング！';
+      s1sub.textContent='赤で押した。やり直し';
+      // mark a bad dot briefly on current position
+      const dots=s1dots.children; const idx=ST.s1.trials.length;
+      if(dots[idx]) dots[idx].classList.add('bad');
+      setTimeout(()=>{ if(dots[idx]) dots[idx].classList.remove('bad'); s1NextTrial(); }, 900);
+      return;
+    }
+    if(p==='go'){
+      ST.s1.locked=true;
+      const rt=now()-ST.s1.greenAt;
+      ST.s1.trials.push(rt);
+      s1RenderDots();
+      s1pad.className='idle';
+      s1main.textContent=Math.round(rt)+' ms';
+      s1sub.textContent=(ST.s1.trials.length)+' / '+ST.s1.total;
+      if(ST.s1.trials.length>=ST.s1.total){
+        setTimeout(s1Finish, 750);
+      }else{
+        setTimeout(s1NextTrial, 750);
+      }
+    }
+  }
+  function s1Finish(){
+    ST.s1.median=median(ST.s1.trials);
+    showScene('s2');
+    s2Begin();
+  }
+
+  /* ============ STAGE 2: internal clock ============ */
+  const s2disp=$('#s2disp'), s2btn=$('#s2btn'), s2flash=$('#s2flash');
+  function s2Begin(){
+    ST.s2.phase='idle'; ST.s2.err=0;
+    s2disp.textContent='0.00'; s2disp.classList.remove('hidden');
+    s2btn.textContent='タップして開始'; s2btn.style.display='';
+    s2flash.textContent='';
+  }
+  function s2Loop(){
+    if(ST.s2.phase!=='running') return;
+    const el=(now()-ST.s2.startAt)/1000;
+    if(el>=3){ s2disp.textContent='? ? ?'; s2disp.classList.add('hidden'); }
+    else{ s2disp.textContent=el.toFixed(2); }
+    ST.s2.raf=requestAnimationFrame(s2Loop);
+  }
+  function s2Start(){
+    ST.s2.phase='running';
+    ST.s2.startAt=now();
+    s2btn.style.display='none';
+    s2disp.classList.remove('hidden');
+    s2flash.textContent='5.00秒で画面をタップ！';
+    ST.s2.raf=requestAnimationFrame(s2Loop);
+  }
+  function s2Stop(){
+    cancelAnimationFrame(ST.s2.raf);
+    ST.s2.phase='done';
+    const el=(now()-ST.s2.startAt)/1000;
+    ST.s2.err=Math.abs(el-5)*1000; // ms
+    const diff=el-5;
+    const sign=diff>=0?'+':'';
+    s2disp.classList.remove('hidden');
+    s2disp.textContent=el.toFixed(2);
+    s2flash.textContent='あなた: '+el.toFixed(2)+'秒 ('+sign+diff.toFixed(2)+')';
+    setTimeout(()=>{ showScene('s3'); s3Begin(); }, 1400);
+  }
+  // whole-screen tap handling for s2 while running (so any tap stops it)
+  function s2Down(e){
+    if(ST.s2.phase==='idle'){ e.preventDefault(); s2Start(); return; }
+    if(ST.s2.phase==='running'){ e.preventDefault(); s2Stop(); return; }
+  }
+
+  /* ============ STAGE 3: dynamic vision / memory ============ */
+  const grid=$('#grid'), s3hint=$('#s3hint'), s3top=$('#s3top');
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+  function s3Begin(){
+    resetState_s3();
+    grid.innerHTML='';
+    const nums=shuffle([1,2,3,4,5,6,7,8,9]);
+    ST.s3.order=nums;
+    for(let i=0;i<9;i++){
+      const c=document.createElement('div');
+      c.className='cell'; c.textContent=nums[i]; c.dataset.n=nums[i];
+      grid.appendChild(c);
+    }
+    s3hint.textContent='覚えて…';
+    s3top.textContent='700ms表示 → 隠れる → 1から順にタップ';
+    ST.s3.phase='show';
+    setTimeout(()=>{
+      // hide
+      [...grid.children].forEach(c=>{ c.textContent='?'; c.classList.add('q'); });
+      ST.s3.phase='play';
+      ST.s3.startAt=now();
+      s3hint.textContent='1 からタップ！';
+    }, 700);
+  }
+  function resetState_s3(){ ST.s3={ order:[], expect:1, mistaps:0, startAt:0, done:false, locked:false, phase:'idle' }; }
+  function s3Down(e){
+    const cell=e.target.closest('.cell');
+    if(!cell) return;
+    e.preventDefault();
+    if(ST.s3.phase!=='play' || ST.s3.done) return;
+    const n=parseInt(cell.dataset.n,10);
+    if(cell.classList.contains('done')) return;
+    if(n===ST.s3.expect){
+      cell.classList.remove('q','bad'); cell.classList.add('done'); cell.textContent=n;
+      ST.s3.expect++;
+      if(ST.s3.expect>9){
+        ST.s3.done=true;
+        ST.s3.time=now()-ST.s3.startAt;
+        s3hint.textContent='完了！ '+(ST.s3.time/1000).toFixed(2)+'秒 / ミス'+ST.s3.mistaps;
+        setTimeout(gotoResult, 900);
+      }
+    }else{
+      ST.s3.mistaps++;
+      cell.classList.add('bad');
+      setTimeout(()=>cell.classList.remove('bad'),260);
+    }
+  }
+
+  /* ============ T6: age mapping + titles ============ */
+  // Each stage score -> reflex age (8..88), piecewise linear & monotonic.
+  const MAP_S1=[[150,8],[200,15],[250,25],[300,38],[350,50],[450,65],[600,88]]; // reaction median ms
+  const MAP_S2=[[50,8],[150,20],[300,30],[500,45],[800,60],[1500,88]];          // clock abs error ms
+  const MAP_S3=[[3000,8],[4500,22],[6000,35],[8000,50],[11000,68],[15000,88]];  // time ms + 400/mistap
+
+  function computeResult(){
+    const s1=ST.s1.median;
+    const s2=ST.s2.err;
+    const s3raw=ST.s3.time + ST.s3.mistaps*400;
+    const a1=clamp(pwl(s1,MAP_S1),8,88);
+    const a2=clamp(pwl(s2,MAP_S2),8,88);
+    const a3=clamp(pwl(s3raw,MAP_S3),8,88);
+    let age=0.5*a1 + 0.25*a2 + 0.25*a3;
+    age=clamp(age,8,88);
+    const ageR=Math.round(age);
+    // percentile "上位X%": younger => more elite. Population ~ N(35,12).
+    let top=normCdf(age,35,12)*100;
+    top=clamp(top,0.1,99.9);
+
+    // per-stage normalized "youthfulness" for bars (0..100, higher=better)
+    const bar = a => Math.round(clamp((88-a)/(88-8)*100,2,100));
+    return {
+      age:ageR, a1,a2,a3,
+      bars:{s1:bar(a1),s2:bar(a2),s3:bar(a3)},
+      raw:{s1,s2,s3:s3raw},
+      top,
+      title:pickTitle(ageR),
+    };
+  }
+
+  const TITLES=[
+    [14,'👶 神の反射'],
+    [18,'⚡ 現役アスリート級'],
+    [24,'🎮 eスポーツ適性あり'],
+    [30,'🐆 まだ若い'],
+    [36,'🙂 平均的ヒト'],
+    [44,'🍵 反応遅延型社会人'],
+    [52,'😪 気配り遅延中'],
+    [62,'🧓 心は老眼'],
+    [74,'🦥 反応、届いてます？'],
+    [999,'🗿 化石'],
+  ];
+  function pickTitle(age){
+    // special: too many flying starts
+    if(ST.s1.flying>=3) return '⚔️ せっかち侍';
+    for(const [lim,t] of TITLES){ if(age<=lim) return t; }
+    return '🗿 化石';
+  }
+
+  /* ============ result screen ============ */
+  let RES=null;
+  function gotoResult(){
+    RES=computeResult();
+    showScene('result');
+    setTimeout(renderResult, 300);
+  }
+  function renderResult(){
+    const el=$('#ageBig');
+    // number slot animation: roll then settle
+    let ticks=0; const target=RES.age;
+    const roll=setInterval(()=>{
+      const r=8+Math.floor(Math.random()*81);
+      el.innerHTML=r+'<span class="yr">歳</span>';
+      ticks++;
+      if(ticks>18){
+        clearInterval(roll);
+        el.innerHTML=target+'<span class="yr">歳</span>';
+        // stamp
+        const st=$('#stamp');
+        st.textContent=RES.title; st.classList.remove('show'); void st.offsetWidth; st.classList.add('show');
+      }
+    },55);
+
+    // percentile
+    $('#pctMsg').textContent='反射神経、上位 '+RES.top.toFixed(1)+'%'+(ST.s1.flying?'（フライング'+ST.s1.flying+'回）':'');
+
+    // bars
+    $('#b1').style.width=RES.bars.s1+'%'; $('#b1v').textContent=Math.round(RES.raw.s1)+'ms';
+    $('#b2').style.width=RES.bars.s2+'%'; $('#b2v').textContent='±'+Math.round(RES.raw.s2)+'ms';
+    $('#b3').style.width=RES.bars.s3+'%'; $('#b3v').textContent=(ST.s3.time/1000).toFixed(2)+'s/ミス'+ST.s3.mistaps;
+
+    // best (localStorage; lower age = better)
+    let best=null;
+    try{ best=JSON.parse(localStorage.getItem('rnac_best')||'null'); }catch(e){}
+    const bm=$('#bestMsg');
+    if(best==null || RES.age<best.age){
+      try{ localStorage.setItem('rnac_best', JSON.stringify({age:RES.age,title:RES.title})); }catch(e){}
+      bm.textContent='🎉 自己ベスト更新！（前回 '+(best?best.age+'歳':'なし')+'）';
+    }else{
+      bm.textContent='自己ベスト: '+best.age+'歳 '+best.title;
+    }
+
+    // draw share card
+    drawCard();
+  }
+
+  /* ============ T7: canvas result card ============ */
+  let cardCanvas=null;
+  function drawCard(){
+    const W=1200,H=630;
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const g=cv.getContext('2d');
+
+    // bg
+    const bg=g.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,'#0d1117'); bg.addColorStop(1,'#0a0f1a');
+    g.fillStyle=bg; g.fillRect(0,0,W,H);
+    // subtle neon frame
+    g.strokeStyle='rgba(34,211,238,0.35)'; g.lineWidth=6; g.strokeRect(20,20,W-40,H-40);
+    g.strokeStyle='rgba(163,230,53,0.18)'; g.lineWidth=2; g.strokeRect(34,34,W-68,H-68);
+
+    // title logo
+    g.textAlign='left'; g.textBaseline='alphabetic';
+    g.fillStyle='#e6edf3'; g.font='900 46px sans-serif';
+    g.fillText('⚡ 反射神経年齢チェッカー', 70, 108);
+    g.fillStyle='#22d3ee'; g.font='700 26px sans-serif';
+    g.fillText('3つのテスト・30秒で測定', 72, 150);
+
+    // big age (left block)
+    g.fillStyle='#8b98a9'; g.font='700 30px sans-serif';
+    g.fillText('反射神経年齢', 80, 250);
+    g.fillStyle='#22d3ee'; g.font='900 240px sans-serif';
+    g.textBaseline='alphabetic';
+    const ageStr=String(RES.age);
+    g.fillText(ageStr, 70, 470);
+    // "歳"
+    const aw=g.measureText(ageStr).width;
+    g.fillStyle='#8b98a9'; g.font='900 70px sans-serif';
+    g.fillText('歳', 70+aw+16, 470);
+
+    // percentile
+    g.fillStyle='#a3e635'; g.font='800 34px sans-serif';
+    g.fillText('上位 '+RES.top.toFixed(1)+'%', 80, 540);
+
+    // title stamp (right)
+    g.save();
+    g.translate(880,250); g.rotate(-6*Math.PI/180);
+    g.strokeStyle='#a3e635'; g.lineWidth=6;
+    g.fillStyle='rgba(163,230,53,0.10)';
+    roundRect(g,-230,-60,460,120,20); g.fill(); g.stroke();
+    g.fillStyle='#a3e635'; g.font='900 40px sans-serif';
+    g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(RES.title, 0, 4);
+    g.restore();
+
+    // three stage bars (right lower)
+    const bars=[
+      ['⚡ 反応速度', RES.bars.s1, '#22d3ee'],
+      ['⏱ 体内時計', RES.bars.s2, '#a3e635'],
+      ['👁 動体視力', RES.bars.s3, '#fbbf24'],
+    ];
+    g.textAlign='left'; g.textBaseline='middle';
+    let by=380;
+    for(const [lab,val,col] of bars){
+      g.fillStyle='#e6edf3'; g.font='700 26px sans-serif';
+      g.fillText(lab, 650, by);
+      const bx=850, bw=270, bh=22;
+      g.fillStyle='#1c2430'; roundRect(g,bx,by-bh/2,bw,bh,11); g.fill();
+      g.fillStyle=col; roundRect(g,bx,by-bh/2,Math.max(12,bw*val/100),bh,11); g.fill();
+      g.fillStyle=col; g.font='800 22px sans-serif'; g.textAlign='right';
+      g.fillText(val+'', bx+bw+46, by); g.textAlign='left';
+      by+=64;
+    }
+
+    g.fillStyle='#8b98a9'; g.font='600 24px sans-serif'; g.textAlign='right';
+    g.fillText('#反射神経年齢チェッカー', W-72, H-52);
+
+    cardCanvas=cv;
+  }
+  function roundRect(g,x,y,w,h,r){
+    g.beginPath();
+    g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r);
+    g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);
+    g.arcTo(x,y,x+w,y,r);
+    g.closePath();
+  }
+
+  function saveCard(){
+    if(!cardCanvas) drawCard();
+    let url;
+    try{ url=cardCanvas.toDataURL('image/png'); }catch(e){ toast('画像生成に失敗しました'); return; }
+    // show fallback img for iOS long-press save
+    const wrap=$('#cardwrap'); $('#cardImg').src=url; wrap.style.display='';
+    // try direct download
+    const a=document.createElement('a'); a.href=url; a.download='reflex_age.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('画像を保存 or 長押しで保存できます');
+    wrap.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  function buildShareText(){
+    const real=parseInt($('#realInput').value,10);
+    let diff='';
+    if(!isNaN(real) && real>0){
+      const d=RES.age-real;
+      diff=' (実年齢'+(d>=0?'+':'−')+Math.abs(d)+'歳)';
+    }
+    return '俺の反射神経年齢、'+RES.age+'歳だった…'+diff+'\n称号：'+RES.title+'\n上位'+RES.top.toFixed(1)+'%\n#反射神経年齢チェッカー';
+  }
+  function copyResult(){
+    const txt=buildShareText();
+    const done=()=>toast('コピーしました！Xに貼って共有');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done));
+    }else{ fallbackCopy(txt,done); }
+  }
+  function fallbackCopy(txt,done){
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.position='fixed'; ta.style.top='-1000px'; document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ toast('コピー不可。手動で選択してください'); }
+    ta.remove();
+  }
+
+  /* ============ retry (full reset) ============ */
+  function fullReset(){
+    if(ST.s2.raf) cancelAnimationFrame(ST.s2.raf);
+    if(ST.s1.timer) clearTimeout(ST.s1.timer);
+    resetState();
+    $('#cardwrap').style.display='none';
+    $('#stamp').classList.remove('show');
+    $('#realInput').value='';
+    ['#b1','#b2','#b3'].forEach(s=>$(s).style.width='0');
+    showScene('title');
+  }
+
+  /* ============ wiring ============ */
+  resetState();
+  $('#startBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); showScene('s1'); s1Begin(); });
+  s1pad.addEventListener('pointerdown', s1Down);
+  // Stage2: listen on whole scene so any tap stops the clock
+  $('#sc-s2').addEventListener('pointerdown', s2Down);
+  s2btn.addEventListener('pointerdown', e=>{ /* handled by scene-level s2Down */ });
+  grid.addEventListener('pointerdown', s3Down);
+  $('#retryBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); fullReset(); });
+  $('#copyBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); copyResult(); });
+  $('#saveBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); saveCard(); });
+
+  // block double-tap zoom / gestures
+  document.addEventListener('gesturestart', e=>e.preventDefault());
+  document.addEventListener('dblclick', e=>e.preventDefault());
+  let lastTouch=0;
+  document.addEventListener('touchend', e=>{
+    const t=now(); if(t-lastTouch<=350){ e.preventDefault(); } lastTouch=t;
+  }, {passive:false});
+})();
+</script>
