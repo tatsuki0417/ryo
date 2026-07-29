@@ -7,3 +7,10 @@ dist-ssr
 
 # TS build info
 tsconfig.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+
+# このツールが生成する実行ログ
+organize_log_*.csv
