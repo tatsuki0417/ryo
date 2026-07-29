@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import GameCanvas from "./components/GameCanvas";
 import TitleScreen from "./ui/TitleScreen";
 import GameOverScreen from "./ui/GameOverScreen";
-import { unlockAudio } from "./engine/audio";
+import { isMuted, setMuted, unlockAudio } from "./engine/audio";
 
 type Screen = "title" | "playing" | "gameover";
 
@@ -30,6 +30,14 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState<number>(loadHighScore);
   const [isNewRecord, setIsNewRecord] = useState(false);
+  const [muted, setMutedState] = useState(isMuted());
+
+  const toggleMute = useCallback(() => {
+    const next = !isMuted();
+    setMuted(next);
+    setMutedState(next);
+    unlockAudio();
+  }, []);
 
   const start = useCallback(() => {
     unlockAudio();
@@ -53,6 +61,13 @@ export default function App() {
 
   return (
     <div className="stage">
+      <button
+        className="mute-btn"
+        onClick={toggleMute}
+        aria-label={muted ? "音を出す" : "消音する"}
+      >
+        {muted ? "🔇" : "🔊"}
+      </button>
       {screen === "playing" && <GameCanvas onGameOver={handleGameOver} />}
       {screen === "title" && <TitleScreen highScore={highScore} onStart={start} />}
       {screen === "gameover" && (

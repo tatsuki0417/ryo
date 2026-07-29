@@ -2,20 +2,35 @@
 let ctx: AudioContext | null = null;
 let muted = false;
 
-function ac(): AudioContext | null {
-  if (muted) return null;
+function ensureCtx(): AudioContext | null {
   if (!ctx) {
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
-    ctx = new AC();
+    try {
+      ctx = new AC();
+    } catch {
+      return null;
+    }
   }
   if (ctx.state === "suspended") void ctx.resume();
   return ctx;
 }
 
+/** 効果音・BGM共通の AudioContext（ミュートに関わらず存在させ、タイミングは維持） */
+export function sharedContext(): AudioContext | null {
+  return ensureCtx();
+}
+
+function ac(): AudioContext | null {
+  if (muted) return null;
+  return ensureCtx();
+}
+
 /** 初回のユーザー操作時に呼び、AudioContext を起こす */
 export function unlockAudio(): void {
-  const c = ac();
+  const c = ensureCtx();
   if (c && c.state === "suspended") void c.resume();
 }
 
@@ -64,6 +79,10 @@ export const sfx = {
     tone(523, 0.1, { type: "square", gain: 0.15 });
     tone(659, 0.1, { type: "square", gain: 0.15, delay: 0.09 });
     tone(1047, 0.18, { type: "square", gain: 0.16, delay: 0.18 });
+  },
+  boss(): void {
+    tone(147, 0.5, { type: "sawtooth", gain: 0.2 });
+    tone(220, 0.5, { type: "square", gain: 0.12, delay: 0.02 });
   },
   gameOver(): void {
     tone(392, 0.18, { type: "sawtooth", gain: 0.16 });

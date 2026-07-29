@@ -49,8 +49,18 @@ export interface Microgame {
   onInput(e: InputEvent): void;
 }
 
+// ミニゲームのジャンル（同ジャンルの連続出題を避けるために使う）
+export type Genre = "action" | "reflex" | "timing" | "judge" | "collect";
+
 // 毎ラウンド新しいインスタンスを生成するためのファクトリ
 export interface MicrogameDef {
+  id: string;
+  genre: Genre;
+  make(): Microgame;
+}
+
+// ボスゲーム（数レベルごとに1本、長めの制限時間で出題）
+export interface BossDef {
   id: string;
   make(): Microgame;
 }

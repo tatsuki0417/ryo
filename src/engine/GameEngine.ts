@@ -1,5 +1,13 @@
 import { sfx } from "./audio";
-import type { InputEvent, Microgame, MicrogameApi, MicrogameDef } from "./types";
+import { setMusicLevel } from "./music";
+import type {
+  BossDef,
+  Genre,
+  InputEvent,
+  Microgame,
+  MicrogameApi,
+  MicrogameDef,
+} from "./types";
 import {
   LOGICAL_H,
   LOGICAL_W,
@@ -15,14 +23,16 @@ type Phase = "intro" | "play" | "result" | "levelup" | "gameover";
 
 const START_LIVES = 4;
 const LEVEL_EVERY = 4; // 何問クリアごとにレベルアップ
+const BOSS_EVERY = 2; // 何回レベルアップごとにボス
 const RESULT_DUR = 0.85;
 const LEVELUP_DUR = 1.15;
 
-function introDur(level: number): number {
+function introDur(level: number, boss: boolean): number {
+  if (boss) return 1.8;
   return clamp(1.6 - (level - 1) * 0.1, 0.85, 1.6);
 }
 function playDur(level: number): number {
-  return clamp(5.0 - (level - 1) * 0.3, 2.4, 5.0);
+  return clamp(5.0 - (level - 1) * 0.32, 2.3, 5.0);
 }
 
 export interface EngineCallbacks {
@@ -31,12 +41,16 @@ export interface EngineCallbacks {
 
 export class GameEngine {
   private defs: MicrogameDef[];
+  private bosses: BossDef[];
   private cb: EngineCallbacks;
 
   lives = START_LIVES;
   score = 0;
   level = 1;
+  combo = 0;
+  bestCombo = 0;
   private clears = 0;
+  private levelUps = 0;
 
   private phase: Phase = "intro";
   private phaseTime = 0;
@@ -47,12 +61,19 @@ export class GameEngine {
   private current: Microgame | null = null;
   private lastResult: "clear" | "fail" = "clear";
   private pendingLevelUp = false;
+  private bossPending = false;
+  private isBossRound = false;
   private queue: MicrogameDef[] = [];
-  private lastId = "";
+  private bossQueue: BossDef[] = [];
+  private lastGenre: Genre | null = null;
   private tickAcc = 0;
 
-  constructor(defs: MicrogameDef[], cb: EngineCallbacks) {
+  private shakeTime = 0;
+  private shakeMag = 0;
+
+  constructor(defs: MicrogameDef[], bosses: BossDef[], cb: EngineCallbacks) {
     this.defs = defs;
+    this.bosses = bosses;
     this.cb = cb;
   }
 
@@ -60,28 +81,38 @@ export class GameEngine {
     this.lives = START_LIVES;
     this.score = 0;
     this.level = 1;
+    this.combo = 0;
+    this.bestCombo = 0;
     this.clears = 0;
+    this.levelUps = 0;
     this.pendingLevelUp = false;
+    this.bossPending = false;
     this.queue = [];
-    this.lastId = "";
+    this.bossQueue = [];
+    this.lastGenre = null;
     this.beginIntro();
   }
 
-  // --- 出題（直前と同じものを避ける） ---
+  // --- 出題（直前と同じジャンルを避ける） ---
   private nextDef(): MicrogameDef {
-    if (this.queue.length === 0) {
-      this.queue = shuffle(this.defs);
-      if (this.queue.length > 1 && this.queue[0].id === this.lastId) {
-        this.queue.push(this.queue.shift()!);
-      }
+    if (this.queue.length === 0) this.queue = shuffle(this.defs);
+    let i = 0;
+    if (this.lastGenre !== null) {
+      const alt = this.queue.findIndex((d) => d.genre !== this.lastGenre);
+      if (alt > 0) i = alt;
     }
-    const def = this.queue.shift()!;
-    this.lastId = def.id;
+    const [def] = this.queue.splice(i, 1);
+    this.lastGenre = def.genre;
     return def;
   }
 
+  private nextBoss(): BossDef {
+    if (this.bossQueue.length === 0) this.bossQueue = shuffle(this.bosses);
+    return this.bossQueue.shift()!;
+  }
+
   private makeApi(): MicrogameApi {
-    const speed = 1 + (this.level - 1) * 0.15;
+    const speed = 1 + (this.level - 1) * 0.16;
     return {
       w: LOGICAL_W,
       h: LOGICAL_H,
@@ -94,11 +125,19 @@ export class GameEngine {
   }
 
   private beginIntro(): void {
-    this.curDur = playDur(this.level);
-    this.introTime = introDur(this.level);
-    const def = this.nextDef();
-    this.current = def.make();
+    this.isBossRound = this.bossPending;
+    this.bossPending = false;
+    if (this.isBossRound) {
+      this.curDur = Math.min(9, playDur(this.level) * 1.7);
+      this.current = this.nextBoss().make();
+      this.shake(7, 0.35);
+      sfx.boss();
+    } else {
+      this.curDur = playDur(this.level);
+      this.current = this.nextDef().make();
+    }
     this.current.init(this.makeApi());
+    this.introTime = introDur(this.level, this.isBossRound);
     this.phase = "intro";
     this.phaseTime = 0;
   }
@@ -110,28 +149,39 @@ export class GameEngine {
     this.tickAcc = 0;
   }
 
+  private shake(mag: number, time: number): void {
+    this.shakeMag = mag;
+    this.shakeTime = time;
+  }
+
   private resolve(result: "clear" | "fail"): void {
     this.lastResult = result;
     if (result === "clear") {
-      this.score += 1;
+      this.score += this.isBossRound ? 3 : 1;
       this.clears += 1;
+      this.combo += 1;
+      if (this.combo > this.bestCombo) this.bestCombo = this.combo;
       sfx.good();
       if (this.clears % LEVEL_EVERY === 0) {
         this.level += 1;
+        this.levelUps += 1;
         this.pendingLevelUp = true;
+        if (this.levelUps % BOSS_EVERY === 0) this.bossPending = true;
       }
     } else {
       this.lives -= 1;
+      this.combo = 0;
       sfx.bad();
+      this.shake(9, 0.3);
     }
     this.phase = "result";
     this.phaseTime = 0;
   }
 
   update(dt: number): void {
-    // 過大なdt（タブ復帰など）を抑制
     dt = Math.min(dt, 0.05);
     this.phaseTime += dt;
+    if (this.shakeTime > 0) this.shakeTime -= dt;
 
     switch (this.phase) {
       case "intro":
@@ -140,7 +190,6 @@ export class GameEngine {
       case "play": {
         this.playTime += dt;
         this.current?.update(dt);
-        // 残り時間のカウント音
         const remain = this.curDur - this.playTime;
         if (remain < 1.4) {
           this.tickAcc += dt;
@@ -168,6 +217,7 @@ export class GameEngine {
             this.phase = "levelup";
             this.phaseTime = 0;
             sfx.levelUp();
+            setMusicLevel(this.level);
           } else {
             this.beginIntro();
           }
@@ -189,42 +239,53 @@ export class GameEngine {
   render(ctx: CanvasRenderingContext2D): void {
     ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
 
+    ctx.save();
+    if (this.shakeTime > 0) {
+      const k = this.shakeMag * (this.shakeTime > 0 ? this.shakeTime : 0);
+      ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
+    }
+
     if (this.phase === "levelup") {
       this.renderLevelUp(ctx);
+      ctx.restore();
       return;
     }
 
-    // ミニゲーム本体（intro中は静止プレビュー、result中は結果スタンプ付き）
     this.current?.render(ctx);
     this.renderHud(ctx);
 
     if (this.phase === "intro") this.renderCommand(ctx);
     if (this.phase === "result") this.renderStamp(ctx);
+    ctx.restore();
   }
 
   private renderHud(ctx: CanvasRenderingContext2D): void {
-    // ライフ（ハート）
     const hx = 16;
     const hy = 20;
     for (let i = 0; i < START_LIVES; i++) {
       drawHeart(ctx, hx + i * 26, hy, 9, i < this.lives);
     }
-    // スコア
-    centerText(
-      ctx,
-      String(this.score),
-      LOGICAL_W - 30,
-      hy,
-      "900 26px sans-serif",
-      PALETTE.accent2,
-      { color: "rgba(0,0,0,0.5)", width: 4 }
-    );
+    centerText(ctx, String(this.score), LOGICAL_W - 30, hy, "900 26px sans-serif", PALETTE.accent2, {
+      color: "rgba(0,0,0,0.5)",
+      width: 4,
+    });
     ctx.textAlign = "right";
     ctx.font = "700 11px sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.fillText("Lv." + this.level, LOGICAL_W - 16, hy + 22);
 
-    // タイマーバー（play中のみ）
+    if (this.combo >= 2) {
+      centerText(
+        ctx,
+        `${this.combo} コンボ!`,
+        LOGICAL_W / 2,
+        24,
+        "900 18px sans-serif",
+        PALETTE.accent,
+        { color: "#fff", width: 3 }
+      );
+    }
+
     if (this.phase === "play") {
       const frac = clamp((this.curDur - this.playTime) / this.curDur, 0, 1);
       const barW = LOGICAL_W - 32;
@@ -233,7 +294,7 @@ export class GameEngine {
       ctx.fillStyle = "rgba(255,255,255,0.15)";
       roundRect(ctx, bx, by, barW, 6, 3);
       ctx.fill();
-      ctx.fillStyle = frac < 0.3 ? PALETTE.bad : PALETTE.accent2;
+      ctx.fillStyle = this.isBossRound ? PALETTE.accent : frac < 0.3 ? PALETTE.bad : PALETTE.accent2;
       roundRect(ctx, bx, by, barW * frac, 6, 3);
       ctx.fill();
     }
@@ -241,18 +302,21 @@ export class GameEngine {
 
   private renderCommand(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.fillStyle = "rgba(27,16,48,0.55)";
+    ctx.fillStyle = this.isBossRound ? "rgba(60,10,20,0.6)" : "rgba(27,16,48,0.55)";
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    if (this.isBossRound) {
+      centerText(ctx, "⚠ BOSS ⚠", LOGICAL_W / 2, LOGICAL_H / 2 - 70, "900 30px sans-serif", PALETTE.bad, {
+        color: "#fff",
+        width: 4,
+      });
+    }
     const cmd = this.current?.command ?? "";
-    // ポップイン演出
     const t = clamp(this.phaseTime / 0.18, 0, 1);
     const pop = 0.7 + t * 0.3;
-    // 長い指示文でも画面幅に収まるようフォントサイズを自動調整
-    const baseFont = 46;
+    const baseFont = this.isBossRound ? 40 : 46;
     ctx.font = `900 ${baseFont}px sans-serif`;
     const textW = ctx.measureText(cmd).width;
-    const maxW = LOGICAL_W - 36;
-    const fit = Math.min(1, maxW / textW);
+    const fit = Math.min(1, (LOGICAL_W - 36) / textW);
     ctx.translate(LOGICAL_W / 2, LOGICAL_H / 2);
     ctx.scale(pop, pop);
     ctx.rotate(-0.05);
@@ -286,7 +350,6 @@ export class GameEngine {
   private renderLevelUp(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = PALETTE.bg;
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    // ストライプ背景
     ctx.save();
     ctx.translate(LOGICAL_W / 2, LOGICAL_H / 2);
     ctx.rotate(-0.3);
@@ -296,6 +359,7 @@ export class GameEngine {
     }
     ctx.restore();
     const t = clamp(this.phaseTime / 0.2, 0, 1);
+    const nextBoss = this.bossPending;
     ctx.save();
     ctx.translate(LOGICAL_W / 2, LOGICAL_H / 2 - 20);
     ctx.scale(0.6 + t * 0.4, 0.6 + t * 0.4);
@@ -307,17 +371,30 @@ export class GameEngine {
     ctx.restore();
     centerText(
       ctx,
-      "Lv." + this.level,
+      nextBoss ? "つぎは ボス！" : "Lv." + this.level,
       LOGICAL_W / 2,
       LOGICAL_H / 2 + 40,
       "900 30px sans-serif",
-      PALETTE.white
+      nextBoss ? PALETTE.bad : PALETTE.white
     );
   }
 
-  // デバッグ/自動テスト用
-  debugState(): { phase: Phase; lives: number; score: number; level: number } {
-    return { phase: this.phase, lives: this.lives, score: this.score, level: this.level };
+  debugState(): {
+    phase: Phase;
+    lives: number;
+    score: number;
+    level: number;
+    combo: number;
+    boss: boolean;
+  } {
+    return {
+      phase: this.phase,
+      lives: this.lives,
+      score: this.score,
+      level: this.level,
+      combo: this.combo,
+      boss: this.isBossRound,
+    };
   }
 }
 

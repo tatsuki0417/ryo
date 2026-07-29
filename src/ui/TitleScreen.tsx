@@ -10,7 +10,7 @@ export default function TitleScreen({ highScore, onStart }: Props) {
       <p className="sub">
         テンポよく出題される
         <br />
-        オールジャンル<strong>30種類以上</strong>の
+        オールジャンル<strong>45種類以上</strong>の
         <br />
         ミニゲーム集！
       </p>

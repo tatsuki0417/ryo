@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { GameEngine } from "../engine/GameEngine";
 import { InputManager } from "../engine/InputManager";
-import { MICROGAMES } from "../microgames";
+import { BOSS_GAMES, MICROGAMES } from "../microgames";
 import { computeViewport } from "../engine/util";
+import { startMusic, stopMusic } from "../engine/music";
 
 interface Props {
   onGameOver: (score: number) => void;
@@ -21,7 +22,7 @@ export default function GameCanvas({ onGameOver }: Props) {
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
     let vp = computeViewport(1, 1);
 
-    const engine = new GameEngine(MICROGAMES, {
+    const engine = new GameEngine(MICROGAMES, BOSS_GAMES, {
       onGameOver: (score) => overRef.current(score),
     });
     // 自動テスト用にエンジンを公開
@@ -43,6 +44,7 @@ export default function GameCanvas({ onGameOver }: Props) {
     ro.observe(canvas);
 
     engine.start();
+    startMusic();
 
     const loop = (now: number) => {
       const dt = (now - last) / 1000;
@@ -66,6 +68,7 @@ export default function GameCanvas({ onGameOver }: Props) {
       cancelAnimationFrame(raf);
       ro.disconnect();
       input.destroy();
+      stopMusic();
       delete (window as unknown as { __engine?: GameEngine }).__engine;
     };
   }, []);
