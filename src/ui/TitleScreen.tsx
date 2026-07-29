@@ -10,7 +10,9 @@ export default function TitleScreen({ highScore, onStart }: Props) {
       <p className="sub">
         テンポよく出題される
         <br />
-        オールジャンルのミニゲーム集！
+        オールジャンル<strong>30種類以上</strong>の
+        <br />
+        ミニゲーム集！
       </p>
       {highScore > 0 && <div className="hi">ハイスコア {highScore}</div>}
       <button className="btn" onClick={onStart}>

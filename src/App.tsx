@@ -9,8 +9,20 @@ type Screen = "title" | "playing" | "gameover";
 const HS_KEY = "minige-matsuri.highscore";
 
 function loadHighScore(): number {
-  const v = Number(localStorage.getItem(HS_KEY));
-  return Number.isFinite(v) ? v : 0;
+  try {
+    const v = Number(localStorage.getItem(HS_KEY));
+    return Number.isFinite(v) ? v : 0;
+  } catch {
+    return 0; // ストレージが使えない環境（サンドボックス等）でも動くように
+  }
+}
+
+function saveHighScore(v: number): void {
+  try {
+    localStorage.setItem(HS_KEY, String(v));
+  } catch {
+    /* 保存できなくてもゲームは続行 */
+  }
 }
 
 export default function App() {
@@ -31,7 +43,7 @@ export default function App() {
       const record = finalScore > highScore;
       if (record) {
         setHighScore(finalScore);
-        localStorage.setItem(HS_KEY, String(finalScore));
+        saveHighScore(finalScore);
       }
       setIsNewRecord(record);
       setScreen("gameover");

@@ -246,13 +246,19 @@ export class GameEngine {
     const cmd = this.current?.command ?? "";
     // ポップイン演出
     const t = clamp(this.phaseTime / 0.18, 0, 1);
-    const scale = 0.7 + t * 0.3;
+    const pop = 0.7 + t * 0.3;
+    // 長い指示文でも画面幅に収まるようフォントサイズを自動調整
+    const baseFont = 46;
+    ctx.font = `900 ${baseFont}px sans-serif`;
+    const textW = ctx.measureText(cmd).width;
+    const maxW = LOGICAL_W - 36;
+    const fit = Math.min(1, maxW / textW);
     ctx.translate(LOGICAL_W / 2, LOGICAL_H / 2);
-    ctx.scale(scale, scale);
+    ctx.scale(pop, pop);
     ctx.rotate(-0.05);
-    centerText(ctx, cmd, 0, 0, "900 46px sans-serif", PALETTE.accent2, {
+    centerText(ctx, cmd, 0, 0, `900 ${baseFont * fit}px sans-serif`, PALETTE.accent2, {
       color: PALETTE.ink,
-      width: 8,
+      width: 8 * fit,
     });
     ctx.restore();
   }
