@@ -1,6 +1,6 @@
 import type { InputEvent } from "../engine/types";
 import { PALETTE, clamp } from "../engine/util";
-import { BaseGame, drawBall, isTapOn } from "./base";
+import { BaseGame, drawBall, drawBuddy, isTapOn } from "./base";
 import { ArrowRush } from "./swipe2";
 
 // ボス: 6連続スワイプの嵐！
@@ -121,20 +121,7 @@ export class BossSurvive extends BaseGame {
     for (const r of this.rocks) {
       drawBall(ctx, this.laneX(r.lane), r.y, 20, PALETTE.bad, "rgba(0,0,0,0.3)", 3);
     }
-    const px = this.laneX(this.lane);
-    ctx.save();
-    ctx.translate(px, this.playerY);
-    ctx.fillStyle = PALETTE.accent2;
-    ctx.beginPath();
-    ctx.moveTo(0, -22);
-    ctx.lineTo(20, 22);
-    ctx.lineTo(-20, 22);
-    ctx.closePath();
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#fff";
-    ctx.stroke();
-    ctx.restore();
+    drawBuddy(ctx, this.laneX(this.lane), this.playerY, 22, PALETTE.accent2, { happy: false });
     this.hint(ctx, "←→でにげろ！");
   }
 }

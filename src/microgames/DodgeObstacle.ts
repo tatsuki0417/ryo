@@ -1,5 +1,6 @@
 import type { InputEvent, Microgame, MicrogameApi } from "../engine/types";
 import { PALETTE, clamp } from "../engine/util";
+import { drawBuddy } from "./base";
 
 interface Rock {
   lane: number;
@@ -60,8 +61,10 @@ export class DodgeObstacle implements Microgame {
 
   onInput(e: InputEvent): void {
     if (this.status !== "playing" || e.type !== "swipe") return;
+    const before = this.lane;
     if (e.dir === "left") this.lane = clamp(this.lane - 1, 0, this.lanes - 1);
     else if (e.dir === "right") this.lane = clamp(this.lane + 1, 0, this.lanes - 1);
+    if (this.lane !== before) this.api.sfx.swipe();
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -80,7 +83,7 @@ export class DodgeObstacle implements Microgame {
       ctx.stroke();
     }
 
-    // 岩
+    // 岩（ゴツゴツした顔つき）
     for (const r of this.rocks) {
       ctx.fillStyle = PALETTE.bad;
       ctx.beginPath();
@@ -91,21 +94,8 @@ export class DodgeObstacle implements Microgame {
       ctx.stroke();
     }
 
-    // プレイヤー
-    const px = this.laneX(this.lane);
-    ctx.save();
-    ctx.translate(px, this.playerY);
-    ctx.fillStyle = PALETTE.accent2;
-    ctx.beginPath();
-    ctx.moveTo(0, -26);
-    ctx.lineTo(22, 24);
-    ctx.lineTo(-22, 24);
-    ctx.closePath();
-    ctx.fill();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#fff";
-    ctx.stroke();
-    ctx.restore();
+    // プレイヤー（かわいいキャラ）
+    drawBuddy(ctx, this.laneX(this.lane), this.playerY, 24, PALETTE.accent2);
 
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.font = "700 16px sans-serif";

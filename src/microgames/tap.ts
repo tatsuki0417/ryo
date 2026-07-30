@@ -2,16 +2,23 @@ import type { InputEvent } from "../engine/types";
 import { PALETTE, centerText, range, roundRect } from "../engine/util";
 import { BaseGame, drawBall, isTapOn } from "./base";
 
-// 反応: 赤→緑に変わった瞬間にタップ！（早押しはミス）
+// 反応: 赤→緑に変わった瞬間にタップ！（黄色のフェイントに釣られてはダメ）
 export class TapReaction extends BaseGame {
   private green = false;
   private delay = 1;
   private t = 0;
+  private fakeAt = 0;
+  private fakeDur = 0.22;
   protected setup(): void {
     this.command = "みどりでタップ！";
     this.green = false;
     this.t = 0;
-    this.delay = range(0.4, Math.max(0.8, 1.8 - (this.api.speed - 1)));
+    this.delay = range(0.6, Math.max(1.0, 1.9 - (this.api.speed - 1)));
+    // 緑になる前に一瞬、黄色のフェイントを出す（早押し誘発）
+    this.fakeAt = this.api.rand() < 0.75 ? range(0.25, this.delay - 0.3) : -1;
+  }
+  private faking(): boolean {
+    return this.fakeAt >= 0 && this.t >= this.fakeAt && this.t < this.fakeAt + this.fakeDur;
   }
   update(dt: number): void {
     if (this.status !== "playing") return;
@@ -21,14 +28,16 @@ export class TapReaction extends BaseGame {
   onInput(e: InputEvent): void {
     if (e.type !== "tap") return;
     if (this.green) this.clear();
-    else this.fail(); // 早押し
+    else this.fail(); // 早押し・フェイント押しはミス
   }
   render(ctx: CanvasRenderingContext2D): void {
-    this.fillBg(ctx, this.green ? "#123a1f" : "#3a1212");
-    drawBall(ctx, this.api.w / 2, this.api.h / 2, 90, this.green ? PALETTE.good : PALETTE.bad, "#fff", 6);
+    const fake = this.faking();
+    this.fillBg(ctx, this.green ? "#123a1f" : fake ? "#3a3410" : "#3a1212");
+    const col = this.green ? PALETTE.good : fake ? PALETTE.accent2 : PALETTE.bad;
+    drawBall(ctx, this.api.w / 2, this.api.h / 2, 90, col, "#fff", 6);
     centerText(
       ctx,
-      this.green ? "いま！" : "まて…",
+      this.green ? "いま！" : fake ? "まだ！" : "まて…",
       this.api.w / 2,
       this.api.h / 2,
       "900 34px sans-serif",
@@ -78,7 +87,8 @@ export class WhackMole extends BaseGame {
       if (h.up > 0 && isTapOn(e, h.x, h.y - 18, 44)) {
         h.up = 0;
         this.got++;
-        this.api.sfx.tap();
+        this.api.sfx.pop();
+        this.api.burst(h.x, h.y - 18, "#b06a32");
         if (this.got >= this.need) this.clear();
         return;
       }
@@ -214,7 +224,8 @@ export class PopBalloon extends BaseGame {
     for (const b of this.bs) {
       if (!b.pop && isTapOn(e, b.x, b.y, 40)) {
         b.pop = true;
-        this.api.sfx.tap();
+        this.api.sfx.pop();
+        this.api.burst(b.x, b.y, b.hue, 14);
         if (this.bs.every((x) => x.pop)) this.clear();
         return;
       }
@@ -235,25 +246,41 @@ export class PopBalloon extends BaseGame {
   }
 }
 
-// パレットクレンザー: とにかくボタンをおせ！（かんたん）
+// 連打: ボタンを規定回数れんだ！（押すたびにへこむ）
 export class BigButton extends BaseGame {
+  private need = 5;
+  private got = 0;
+  private squish = 0;
   protected setup(): void {
-    this.command = "ボタンをおせ！";
+    this.need = 4 + Math.round((this.api.speed - 1) * 4); // 4〜
+    this.got = 0;
+    this.squish = 0;
+    this.command = `ボタンを ${this.need}回おせ！`;
+  }
+  update(dt: number): void {
+    if (this.squish > 0) this.squish = Math.max(0, this.squish - dt * 6);
   }
   onInput(e: InputEvent): void {
-    if (e.type === "tap") this.clear();
+    if (e.type !== "tap" || this.status !== "playing") return;
+    this.got++;
+    this.squish = 1;
+    this.api.sfx.tap();
+    this.api.burst(this.api.w / 2, this.api.h / 2, PALETTE.accent2, 6);
+    if (this.got >= this.need) this.clear();
   }
   render(ctx: CanvasRenderingContext2D): void {
     this.fillBg(ctx, "#201038");
     const w = this.api.w;
     const h = this.api.h;
+    const push = this.squish * 10;
     ctx.fillStyle = "#c9a400";
     roundRect(ctx, w / 2 - 110, h / 2 - 60, 220, 120, 24);
     ctx.fill();
     ctx.fillStyle = PALETTE.accent2;
-    roundRect(ctx, w / 2 - 110, h / 2 - 70, 220, 120, 24);
+    roundRect(ctx, w / 2 - 110, h / 2 - 70 + push, 220, 120, 24);
     ctx.fill();
-    centerText(ctx, "おす", w / 2, h / 2 - 10, "900 44px sans-serif", PALETTE.ink);
+    centerText(ctx, String(this.need - this.got), w / 2, h / 2 - 10 + push, "900 48px sans-serif", PALETTE.ink);
+    this.hint(ctx, "れんだ！");
   }
 }
 

@@ -38,7 +38,8 @@ export class CatchBasket extends BaseGame {
       if (it.y >= this.basketY - 26 && it.y <= this.basketY + 26) {
         if (it.lane === this.lane) {
           this.got++;
-          this.api.sfx.tap();
+          this.api.sfx.coin();
+          this.api.burst(this.laneX(it.lane), this.basketY, "#ffd63d");
           if (this.got >= this.need) this.clear();
           return false;
         }
@@ -83,7 +84,8 @@ export class FeedPet extends BaseGame {
     for (const f of this.foods) {
       if (!f.got && isTapOn(e, f.x, f.y, 40)) {
         f.got = true;
-        this.api.sfx.tap();
+        this.api.sfx.coin();
+        this.api.burst(f.x, f.y, "#ff9a3d");
         if (this.foods.every((x) => x.got)) this.clear();
         return;
       }
@@ -120,7 +122,8 @@ export class Soccer extends BaseGame {
     if (this.status !== "playing") return;
     if (e.type === "swipe" && e.dir === "up") {
       if (this.kicked === 0) this.kicked = 0.0001;
-      this.api.sfx.tap();
+      this.api.sfx.jump();
+      this.api.burst(this.api.w / 2, this.ballY, "#ffffff", 14);
       this.clear();
     } else if (e.type === "swipe") {
       this.fail();
@@ -167,7 +170,8 @@ export class PopStars extends BaseGame {
     for (const s of this.stars) {
       if (!s.got && isTapOn(e, s.x, s.y, 38)) {
         s.got = true;
-        this.api.sfx.tap();
+        this.api.sfx.coin();
+        this.api.burst(s.x, s.y, "#ffd63d");
         if (this.stars.every((x) => x.got)) this.clear();
         return;
       }

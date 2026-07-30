@@ -1,3 +1,5 @@
+import Mascot from "./Mascot";
+
 interface Props {
   score: number;
   highScore: number;
@@ -15,6 +17,7 @@ export default function GameOverScreen({
 }: Props) {
   return (
     <div className="overlay">
+      <Mascot className="mascot" color={isNewRecord ? "#ffd63d" : "#8a7fb5"} size={84} />
       <h2>ゲームオーバー</h2>
       <div className="score-line">
         スコア

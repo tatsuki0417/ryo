@@ -64,16 +64,73 @@ function tone(
   osc.stop(t0 + dur + 0.02);
 }
 
+// ホワイトノイズを一度だけ生成して使い回す（スワイプ音などに使用）
+let noiseBuf: AudioBuffer | null = null;
+function noiseBuffer(c: AudioContext): AudioBuffer {
+  if (!noiseBuf) {
+    noiseBuf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+
+function noise(dur: number, opts: { gain?: number; freq?: number; sweepTo?: number } = {}): void {
+  const c = ac();
+  if (!c) return;
+  const t0 = c.currentTime;
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(opts.freq ?? 1200, t0);
+  if (opts.sweepTo) bp.frequency.exponentialRampToValueAtTime(opts.sweepTo, t0 + dur);
+  const g = c.createGain();
+  const vol = opts.gain ?? 0.12;
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(bp).connect(g).connect(c.destination);
+  src.start(t0);
+  src.stop(t0 + dur + 0.02);
+}
+
 export const sfx = {
   tap(): void {
     tone(660, 0.06, { type: "triangle", gain: 0.12 });
   },
   good(): void {
-    tone(880, 0.09, { type: "square", gain: 0.16 });
-    tone(1320, 0.12, { type: "square", gain: 0.14, delay: 0.08 });
+    // 明るい上昇アルペジオ
+    tone(784, 0.09, { type: "square", gain: 0.15 });
+    tone(988, 0.09, { type: "square", gain: 0.15, delay: 0.07 });
+    tone(1319, 0.14, { type: "square", gain: 0.15, delay: 0.14 });
   },
   bad(): void {
     tone(200, 0.28, { type: "sawtooth", gain: 0.18, sweepTo: 80 });
+  },
+  pop(): void {
+    tone(880, 0.05, { type: "sine", gain: 0.16, sweepTo: 1600 });
+    noise(0.06, { gain: 0.08, freq: 2200 });
+  },
+  coin(): void {
+    tone(988, 0.05, { type: "square", gain: 0.14 });
+    tone(1319, 0.12, { type: "square", gain: 0.14, delay: 0.05 });
+  },
+  swipe(): void {
+    noise(0.16, { gain: 0.1, freq: 700, sweepTo: 2600 });
+  },
+  jump(): void {
+    tone(360, 0.16, { type: "square", gain: 0.13, sweepTo: 900 });
+  },
+  powerUp(): void {
+    tone(523, 0.07, { type: "square", gain: 0.13 });
+    tone(659, 0.07, { type: "square", gain: 0.13, delay: 0.06 });
+    tone(784, 0.07, { type: "square", gain: 0.13, delay: 0.12 });
+    tone(1047, 0.14, { type: "square", gain: 0.14, delay: 0.18 });
+  },
+  combo(n: number): void {
+    // コンボ数が上がるほど高い音（爽快感）
+    const base = 660 * Math.pow(1.0595, Math.min(n, 18));
+    tone(base, 0.09, { type: "triangle", gain: 0.15 });
   },
   levelUp(): void {
     tone(523, 0.1, { type: "square", gain: 0.15 });

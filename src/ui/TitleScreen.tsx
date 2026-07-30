@@ -1,3 +1,5 @@
+import Mascot from "./Mascot";
+
 interface Props {
   highScore: number;
   onStart: () => void;
@@ -6,6 +8,11 @@ interface Props {
 export default function TitleScreen({ highScore, onStart }: Props) {
   return (
     <div className="overlay">
+      <div className="mascot-row">
+        <Mascot className="mascot bounce" color="#ffd63d" />
+        <Mascot className="mascot bounce delay" color="#e94078" size={72} />
+        <Mascot className="mascot bounce delay2" color="#39d98a" size={80} />
+      </div>
       <h1>ミニゲー祭り</h1>
       <p className="sub">
         テンポよく出題される

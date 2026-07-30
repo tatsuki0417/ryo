@@ -1,27 +1,59 @@
 import type { InputEvent, SwipeDir } from "../engine/types";
 import { PALETTE, centerText, pick, range } from "../engine/util";
-import { BaseGame, drawBall } from "./base";
+import { BaseGame, drawBall, drawBuddy } from "./base";
 
 const OPP: Record<SwipeDir, SwipeDir> = { up: "down", down: "up", left: "right", right: "left" };
 const DIR_JP: Record<SwipeDir, string> = { up: "うえ", down: "した", left: "ひだり", right: "みぎ" };
 
-// 瞬発: くだものをスワイプでスパッと切れ！（向きは自由）
+// 瞬発: くだものだけスパッと切れ！ばくだんを切るとミス。
+const FRUIT_EMOJI = ["🍉", "🍎", "🍊", "🍓", "🍇"];
 export class SliceFruit extends BaseGame {
-  private x = 180;
-  private y = 320;
+  private items: { x: number; y: number; bomb: boolean; sliced: boolean; emoji: string }[] = [];
   protected setup(): void {
-    this.command = "スワイプで きれ！";
-    this.x = range(90, this.api.w - 90);
-    this.y = range(240, this.api.h - 200);
+    this.command = "くだものを きれ！";
+    this.items = [];
+    const n = 3;
+    const bombIdx = this.api.rand() < 0.7 ? Math.floor(this.api.rand() * (n + 1)) : -1;
+    for (let i = 0; i < n + 1; i++) {
+      this.items.push({
+        x: range(70, this.api.w - 70),
+        y: range(200, this.api.h - 170),
+        bomb: i === bombIdx,
+        sliced: false,
+        emoji: FRUIT_EMOJI[(this.api.rand() * FRUIT_EMOJI.length) | 0],
+      });
+    }
+    // ばくだんが無い場合は最後を必ずフルーツに（クリア可能）
+    if (bombIdx < 0) this.items[n].bomb = false;
   }
   onInput(e: InputEvent): void {
-    if (e.type === "swipe") this.clear();
+    if (e.type !== "swipe") return;
+    for (const it of this.items) {
+      if (it.sliced || Math.hypot(it.x - e.x, it.y - e.y) > 60) continue;
+      if (it.bomb) {
+        this.fail();
+      } else {
+        it.sliced = true;
+        this.api.sfx.swipe();
+        this.api.burst(it.x, it.y, "#7bd93a", 14);
+        if (this.items.filter((x) => !x.bomb).every((x) => x.sliced)) this.clear();
+      }
+      return;
+    }
   }
   render(ctx: CanvasRenderingContext2D): void {
     this.fillBg(ctx, "#0f2818");
-    drawBall(ctx, this.x, this.y, 52, "#7bd93a", "#4f9f1f", 5);
-    centerText(ctx, "🍉", this.x, this.y, "50px sans-serif", "#fff");
-    this.hint(ctx, "ゆびで スパッと");
+    for (const it of this.items) {
+      if (it.sliced) continue;
+      if (it.bomb) {
+        drawBall(ctx, it.x, it.y, 40, "#333", "#000", 4);
+        centerText(ctx, "💣", it.x, it.y, "38px sans-serif", "#fff");
+      } else {
+        drawBall(ctx, it.x, it.y, 42, "#7bd93a", "#4f9f1f", 4);
+        centerText(ctx, it.emoji, it.x, it.y, "40px sans-serif", "#fff");
+      }
+    }
+    this.hint(ctx, "ばくだんは切るな！");
   }
 }
 
@@ -69,7 +101,8 @@ export class SwatFlies extends BaseGame {
     });
     if (best >= 0) {
       this.flies[best].gone = true;
-      this.api.sfx.tap();
+      this.api.sfx.swipe();
+      this.api.burst(this.flies[best].x, this.flies[best].y, "#39d98a");
       if (this.flies.every((f) => f.gone)) this.clear();
     }
   }
@@ -112,7 +145,7 @@ export class JumpOver extends BaseGame {
   onInput(e: InputEvent): void {
     if (e.type === "swipe" && e.dir === "up" && this.air <= 0) {
       this.air = 0.55;
-      this.api.sfx.tap();
+      this.api.sfx.jump();
     }
   }
   render(ctx: CanvasRenderingContext2D): void {
@@ -123,9 +156,9 @@ export class JumpOver extends BaseGame {
     ctx.moveTo(0, this.ground + 30);
     ctx.lineTo(this.api.w, this.ground + 30);
     ctx.stroke();
-    // プレイヤー
+    // プレイヤー（かわいいキャラ）
     const jump = this.air > 0 ? Math.sin((1 - this.air / 0.55) * Math.PI) * 90 : 0;
-    drawBall(ctx, this.playerX, this.ground - jump, 26, PALETTE.accent2, "#fff", 4);
+    drawBuddy(ctx, this.playerX, this.ground - jump, 24, PALETTE.accent2, { look: 1 });
     // 障害物
     ctx.fillStyle = PALETTE.bad;
     ctx.fillRect(this.obsX - 18, this.ground - 6, 36, 36);

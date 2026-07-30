@@ -1,6 +1,6 @@
 import type { InputEvent, SwipeDir } from "../engine/types";
 import { PALETTE, centerText, clamp, pick } from "../engine/util";
-import { BaseGame, drawBall } from "./base";
+import { BaseGame, drawBall, drawBuddy } from "./base";
 
 const DIR_JP: Record<SwipeDir, string> = { up: "↑", down: "↓", left: "←", right: "→" };
 const ANGLE: Record<SwipeDir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
@@ -24,7 +24,7 @@ export class ArrowRush extends BaseGame {
   onInput(e: InputEvent): void {
     if (e.type !== "swipe") return;
     if (e.dir === this.seq[this.idx]) {
-      this.api.sfx.tap();
+      this.api.sfx.swipe();
       this.idx++;
       if (this.idx >= this.seq.length) this.clear();
     } else {
@@ -120,8 +120,10 @@ export class DodgeBeam extends BaseGame {
   }
   onInput(e: InputEvent): void {
     if (e.type !== "swipe") return;
+    const before = this.row;
     if (e.dir === "up") this.row = clamp(this.row - 1, 0, this.rows - 1);
     else if (e.dir === "down") this.row = clamp(this.row + 1, 0, this.rows - 1);
+    if (this.row !== before) this.api.sfx.swipe();
   }
   render(ctx: CanvasRenderingContext2D): void {
     this.fillBg(ctx, "#0f1420");
@@ -130,7 +132,7 @@ export class DodgeBeam extends BaseGame {
       ctx.fillRect(0, this.rowY(b.row) - 5, this.api.w, 10);
       drawBall(ctx, b.x, this.rowY(b.row), 12, "#fff", PALETTE.bad, 3);
     }
-    drawBall(ctx, this.px, this.rowY(this.row), 22, PALETTE.accent2, "#fff", 4);
+    drawBuddy(ctx, this.px, this.rowY(this.row), 20, PALETTE.accent2, { happy: false });
     this.hint(ctx, "上下スワイプで列を移動");
   }
 }

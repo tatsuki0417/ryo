@@ -1,5 +1,6 @@
 import { sfx } from "./audio";
 import { setMusicLevel } from "./music";
+import { Particles } from "./particles";
 import type {
   BossDef,
   Genre,
@@ -70,6 +71,7 @@ export class GameEngine {
 
   private shakeTime = 0;
   private shakeMag = 0;
+  private particles = new Particles();
 
   constructor(defs: MicrogameDef[], bosses: BossDef[], cb: EngineCallbacks) {
     this.defs = defs;
@@ -90,6 +92,7 @@ export class GameEngine {
     this.queue = [];
     this.bossQueue = [];
     this.lastGenre = null;
+    this.particles.clear();
     this.beginIntro();
   }
 
@@ -120,7 +123,16 @@ export class GameEngine {
       duration: this.curDur,
       rand: () => Math.random(),
       range,
-      sfx: { tap: sfx.tap, good: sfx.good, bad: sfx.bad },
+      sfx: {
+        tap: sfx.tap,
+        good: sfx.good,
+        bad: sfx.bad,
+        pop: sfx.pop,
+        coin: sfx.coin,
+        swipe: sfx.swipe,
+        jump: sfx.jump,
+      },
+      burst: (x, y, color, count) => this.particles.burst(x, y, color, count),
     };
   }
 
@@ -162,6 +174,8 @@ export class GameEngine {
       this.combo += 1;
       if (this.combo > this.bestCombo) this.bestCombo = this.combo;
       sfx.good();
+      if (this.combo >= 2) sfx.combo(this.combo);
+      this.particles.confetti(LOGICAL_W, this.isBossRound ? 90 : 50);
       if (this.clears % LEVEL_EVERY === 0) {
         this.level += 1;
         this.levelUps += 1;
@@ -182,6 +196,7 @@ export class GameEngine {
     dt = Math.min(dt, 0.05);
     this.phaseTime += dt;
     if (this.shakeTime > 0) this.shakeTime -= dt;
+    this.particles.update(dt);
 
     switch (this.phase) {
       case "intro":
@@ -252,6 +267,7 @@ export class GameEngine {
     }
 
     this.current?.render(ctx);
+    this.particles.render(ctx);
     this.renderHud(ctx);
 
     if (this.phase === "intro") this.renderCommand(ctx);
@@ -332,18 +348,17 @@ export class GameEngine {
     const ok = this.lastResult === "clear";
     const t = clamp(this.phaseTime / 0.14, 0, 1);
     const scale = 1.4 - t * 0.4;
+    let label = ok ? "クリア！" : "ミス！";
+    // コンボが乗ってきたら褒め言葉でテンションを上げる
+    if (ok && this.combo >= 8) label = "スゴイ！";
+    else if (ok && this.combo >= 5) label = "ナイス！";
     ctx.translate(LOGICAL_W / 2, LOGICAL_H / 2);
     ctx.scale(scale, scale);
     ctx.rotate(ok ? -0.12 : 0.12);
-    centerText(
-      ctx,
-      ok ? "せいかい！" : "ミス…",
-      0,
-      0,
-      "900 52px sans-serif",
-      ok ? PALETTE.good : PALETTE.bad,
-      { color: PALETTE.white, width: 8 }
-    );
+    centerText(ctx, label, 0, 0, "900 52px sans-serif", ok ? PALETTE.good : PALETTE.bad, {
+      color: PALETTE.white,
+      width: 8,
+    });
     ctx.restore();
   }
 

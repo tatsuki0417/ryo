@@ -29,7 +29,13 @@ export interface MicrogameApi {
     tap(): void;
     good(): void;
     bad(): void;
+    pop(): void;
+    coin(): void;
+    swipe(): void;
+    jump(): void;
   };
+  /** パーティクルを弾けさせる（演出用） */
+  burst(x: number, y: number, color?: string, count?: number): void;
 }
 
 // 各ミニゲームが実装する共通ライフサイクル

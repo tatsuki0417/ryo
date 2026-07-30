@@ -81,7 +81,8 @@ export class GoodBadFalling extends BaseGame {
       else {
         it.got = true;
         this.got++;
-        this.api.sfx.tap();
+        this.api.sfx.coin();
+        this.api.burst(it.x, it.y, "#39d98a");
         if (this.got >= this.need) this.clear();
       }
       return;
@@ -184,7 +185,8 @@ export class SwatTap extends BaseGame {
     for (const b of this.bugs) {
       if (!b.dead && isTapOn(e, b.x, b.y, 34)) {
         b.dead = true;
-        this.api.sfx.tap();
+        this.api.sfx.pop();
+        this.api.burst(b.x, b.y, "#8bd450");
         if (this.bugs.every((x) => x.dead)) this.clear();
         return;
       }

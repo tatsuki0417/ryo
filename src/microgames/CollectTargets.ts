@@ -53,7 +53,8 @@ export class CollectTargets implements Microgame {
     for (const c of this.coins) {
       if (!c.got && Math.hypot(e.x - c.x, e.y - c.y) <= c.r + 12) {
         c.got = true;
-        this.api.sfx.tap();
+        this.api.sfx.coin();
+        this.api.burst(c.x, c.y, "#ffd63d");
         break;
       }
     }
