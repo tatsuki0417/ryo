@@ -1,6 +1,7 @@
 import type { InputEvent } from "../engine/types";
 import { PALETTE, clamp } from "../engine/util";
-import { BaseGame, drawBall, drawBuddy } from "./base";
+import { BaseGame, drawBall } from "./base";
+import { drawPlayer } from "../engine/profile";
 
 // 連打+タイミング: ちょうどの大きさまで連打でふくらませ、割るな！（止めるのはタップ長押し不可なので自動判定）
 export class PumpBalloon extends BaseGame {
@@ -103,7 +104,7 @@ export class FlappyTap extends BaseGame {
       ctx.fillRect(g.x - 18, 140, 36, g.cy - g.gap / 2 - 140);
       ctx.fillRect(g.x - 18, g.cy + g.gap / 2, 36, this.api.h - (g.cy + g.gap / 2));
     }
-    drawBuddy(ctx, this.px, this.y, 18, PALETTE.accent2, { look: 1 });
+    drawPlayer(ctx, this.px, this.y, 18, { look: 1 });
     this.hint(ctx, "タップで上へ");
   }
 }

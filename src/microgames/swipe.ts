@@ -1,6 +1,7 @@
 import type { InputEvent, SwipeDir } from "../engine/types";
 import { PALETTE, centerText, pick, range } from "../engine/util";
-import { BaseGame, drawBall, drawBuddy } from "./base";
+import { BaseGame, drawBall } from "./base";
+import { drawPlayer } from "../engine/profile";
 
 const OPP: Record<SwipeDir, SwipeDir> = { up: "down", down: "up", left: "right", right: "left" };
 const DIR_JP: Record<SwipeDir, string> = { up: "うえ", down: "した", left: "ひだり", right: "みぎ" };
@@ -156,9 +157,9 @@ export class JumpOver extends BaseGame {
     ctx.moveTo(0, this.ground + 30);
     ctx.lineTo(this.api.w, this.ground + 30);
     ctx.stroke();
-    // プレイヤー（かわいいキャラ）
+    // プレイヤー（えらんだどうぶつ）
     const jump = this.air > 0 ? Math.sin((1 - this.air / 0.55) * Math.PI) * 90 : 0;
-    drawBuddy(ctx, this.playerX, this.ground - jump, 24, PALETTE.accent2, { look: 1 });
+    drawPlayer(ctx, this.playerX, this.ground - jump, 24, { look: 1 });
     // 障害物
     ctx.fillStyle = PALETTE.bad;
     ctx.fillRect(this.obsX - 18, this.ground - 6, 36, 36);

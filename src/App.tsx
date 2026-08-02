@@ -2,9 +2,12 @@ import { useCallback, useState } from "react";
 import GameCanvas from "./components/GameCanvas";
 import TitleScreen from "./ui/TitleScreen";
 import GameOverScreen from "./ui/GameOverScreen";
+import CharacterSelect from "./ui/CharacterSelect";
 import { isMuted, setMuted, unlockAudio } from "./engine/audio";
+import { addCoins, getCoins } from "./engine/profile";
+import type { AnimalCharacter } from "./engine/characters";
 
-type Screen = "title" | "playing" | "gameover";
+type Screen = "title" | "playing" | "gameover" | "select";
 
 const HS_KEY = "minige-matsuri.highscore";
 
@@ -31,6 +34,8 @@ export default function App() {
   const [highScore, setHighScore] = useState<number>(loadHighScore);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
+  const [coins, setCoins] = useState<number>(getCoins);
+  const [newlyUnlocked, setNewlyUnlocked] = useState<AnimalCharacter[]>([]);
 
   const toggleMute = useCallback(() => {
     const next = !isMuted();
@@ -42,6 +47,7 @@ export default function App() {
   const start = useCallback(() => {
     unlockAudio();
     setIsNewRecord(false);
+    setNewlyUnlocked([]);
     setScreen("playing");
   }, []);
 
@@ -54,10 +60,24 @@ export default function App() {
         saveHighScore(finalScore);
       }
       setIsNewRecord(record);
+      // スコアぶんのコインをためて、あらたなアンロックがあれば祝う
+      const unlocked = addCoins(finalScore);
+      setCoins(getCoins());
+      setNewlyUnlocked(unlocked);
       setScreen("gameover");
     },
     [highScore]
   );
+
+  const openCustomize = useCallback(() => {
+    unlockAudio();
+    setScreen("select");
+  }, []);
+
+  const backToTitle = useCallback(() => {
+    setCoins(getCoins());
+    setScreen("title");
+  }, []);
 
   return (
     <div className="stage">
@@ -69,14 +89,23 @@ export default function App() {
         {muted ? "🔇" : "🔊"}
       </button>
       {screen === "playing" && <GameCanvas onGameOver={handleGameOver} />}
-      {screen === "title" && <TitleScreen highScore={highScore} onStart={start} />}
+      {screen === "title" && (
+        <TitleScreen
+          highScore={highScore}
+          coins={coins}
+          onStart={start}
+          onCustomize={openCustomize}
+        />
+      )}
+      {screen === "select" && <CharacterSelect onBack={backToTitle} />}
       {screen === "gameover" && (
         <GameOverScreen
           score={score}
           highScore={highScore}
           isNewRecord={isNewRecord}
+          unlocked={newlyUnlocked}
           onRetry={start}
-          onTitle={() => setScreen("title")}
+          onTitle={backToTitle}
         />
       )}
     </div>

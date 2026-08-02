@@ -1,6 +1,6 @@
 import type { InputEvent, Microgame, MicrogameApi } from "../engine/types";
 import { PALETTE, clamp } from "../engine/util";
-import { drawBuddy } from "./base";
+import { drawPlayer } from "../engine/profile";
 
 interface Rock {
   lane: number;
@@ -94,8 +94,8 @@ export class DodgeObstacle implements Microgame {
       ctx.stroke();
     }
 
-    // プレイヤー（かわいいキャラ）
-    drawBuddy(ctx, this.laneX(this.lane), this.playerY, 24, PALETTE.accent2);
+    // プレイヤー（えらんだどうぶつ）
+    drawPlayer(ctx, this.laneX(this.lane), this.playerY, 24);
 
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.font = "700 16px sans-serif";

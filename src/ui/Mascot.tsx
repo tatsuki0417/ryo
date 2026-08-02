@@ -1,39 +1,43 @@
+import { useEffect, useRef } from "react";
+import { getCharacter } from "../engine/characters";
+import { getSelectedCharacter } from "../engine/profile";
+
 interface Props {
+  /** 表示するキャラID。省略時はいま選んでいるキャラ */
+  characterId?: string;
   /** 表示サイズ(px) */
   size?: number;
-  /** 体の色 */
-  color?: string;
   className?: string;
 }
 
-// タイトル等に出すマスコットキャラ（ゲーム中のキャラと同じ顔）。
-export default function Mascot({ size = 96, color = "#ffd63d", className }: Props) {
+// タイトル・ゲームオーバー・きせかえに出すマスコット。
+// ゲーム中と同じ canvas 描画のどうぶつを、小さなキャンバスにスナップショットする。
+export default function Mascot({ characterId, size = 96, className }: Props) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const character = characterId ? getCharacter(characterId) : getSelectedCharacter();
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(size * dpr);
+    canvas.height = Math.round(size * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    // 耳やくちばしが切れないよう、体はやや小さめ＆すこし下に
+    const r = size * 0.32;
+    character.draw(ctx, size / 2, size * 0.56, r, {});
+  }, [character, size]);
+
   return (
-    <svg
+    <canvas
+      ref={ref}
       className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
+      style={{ width: size, height: size }}
       role="img"
-      aria-label="マスコット"
-    >
-      <circle cx="50" cy="52" r="40" fill={color} stroke="rgba(0,0,0,0.18)" strokeWidth="4" />
-      {/* ほっぺ */}
-      <circle cx="32" cy="60" r="7" fill="rgba(255,120,150,0.55)" />
-      <circle cx="68" cy="60" r="7" fill="rgba(255,120,150,0.55)" />
-      {/* 目 */}
-      <circle cx="37" cy="46" r="9" fill="#fff" />
-      <circle cx="63" cy="46" r="9" fill="#fff" />
-      <circle cx="39" cy="47" r="4.5" fill="#1b1030" />
-      <circle cx="65" cy="47" r="4.5" fill="#1b1030" />
-      {/* 口 */}
-      <path
-        d="M40 62 Q50 72 60 62"
-        fill="none"
-        stroke="#1b1030"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-    </svg>
+      aria-label={character.name}
+    />
   );
 }

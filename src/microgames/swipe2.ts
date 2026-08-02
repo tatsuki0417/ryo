@@ -1,6 +1,7 @@
 import type { InputEvent, SwipeDir } from "../engine/types";
 import { PALETTE, centerText, clamp, pick } from "../engine/util";
-import { BaseGame, drawBall, drawBuddy } from "./base";
+import { BaseGame, drawBall } from "./base";
+import { drawPlayer } from "../engine/profile";
 
 const DIR_JP: Record<SwipeDir, string> = { up: "↑", down: "↓", left: "←", right: "→" };
 const ANGLE: Record<SwipeDir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
@@ -132,7 +133,7 @@ export class DodgeBeam extends BaseGame {
       ctx.fillRect(0, this.rowY(b.row) - 5, this.api.w, 10);
       drawBall(ctx, b.x, this.rowY(b.row), 12, "#fff", PALETTE.bad, 3);
     }
-    drawBuddy(ctx, this.px, this.rowY(this.row), 20, PALETTE.accent2, { happy: false });
+    drawPlayer(ctx, this.px, this.rowY(this.row), 20, { happy: false });
     this.hint(ctx, "上下スワイプで列を移動");
   }
 }

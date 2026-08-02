@@ -1,17 +1,25 @@
 import Mascot from "./Mascot";
+import { getSelectedId } from "../engine/profile";
+import { CHARACTERS } from "../engine/characters";
 
 interface Props {
   highScore: number;
+  coins: number;
   onStart: () => void;
+  onCustomize: () => void;
 }
 
-export default function TitleScreen({ highScore, onStart }: Props) {
+export default function TitleScreen({ highScore, coins, onStart, onCustomize }: Props) {
+  // 中央はいま選んでいるどうぶつ。両どなりはちがうどうぶつをそえて にぎやかに。
+  const selId = getSelectedId();
+  const others = CHARACTERS.filter((c) => c.id !== selId).slice(0, 2);
+
   return (
     <div className="overlay">
       <div className="mascot-row">
-        <Mascot className="mascot bounce" color="#ffd63d" />
-        <Mascot className="mascot bounce delay" color="#e94078" size={72} />
-        <Mascot className="mascot bounce delay2" color="#39d98a" size={80} />
+        <Mascot className="mascot bounce delay" characterId={others[0]?.id} size={64} />
+        <Mascot className="mascot bounce" characterId={selId} size={92} />
+        <Mascot className="mascot bounce delay2" characterId={others[1]?.id} size={70} />
       </div>
       <h1>ミニゲー祭り</h1>
       <p className="sub">
@@ -21,9 +29,15 @@ export default function TitleScreen({ highScore, onStart }: Props) {
         <br />
         ミニゲーム集！
       </p>
-      {highScore > 0 && <div className="hi">ハイスコア {highScore}</div>}
+      <div className="title-stats">
+        {highScore > 0 && <span className="hi">ハイスコア {highScore}</span>}
+        <span className="coin-wallet">🪙 {coins}</span>
+      </div>
       <button className="btn" onClick={onStart}>
         スタート
+      </button>
+      <button className="btn secondary" onClick={onCustomize}>
+        きせかえ 🐾
       </button>
       <div className="hint-list">
         タップ・スワイプで操作

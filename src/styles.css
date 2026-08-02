@@ -227,3 +227,120 @@ body {
   line-height: 1.7;
   max-width: 300px;
 }
+
+/* --- コイン / タイトルのステータス --- */
+.title-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.coin-wallet {
+  font-size: clamp(13px, 4cqw, 16px);
+  font-weight: 900;
+  color: var(--accent2);
+}
+.big-wallet {
+  font-size: clamp(16px, 6cqw, 22px);
+}
+.coin-earn {
+  font-size: clamp(13px, 4.5cqw, 16px);
+  font-weight: 700;
+  color: var(--accent2);
+}
+
+/* --- きせかえ画面 --- */
+.select-overlay {
+  justify-content: flex-start;
+  gap: clamp(8px, 2.5cqw, 14px);
+  padding-top: clamp(28px, 9cqw, 44px);
+  overflow-y: auto;
+}
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(6px, 2.5cqw, 12px);
+  width: 100%;
+  max-width: 340px;
+}
+.char-cell {
+  position: relative;
+  appearance: none;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: clamp(6px, 2cqw, 10px) 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+}
+.char-cell:active {
+  transform: scale(0.95);
+}
+.char-cell.sel {
+  border-color: var(--accent2);
+  background: rgba(255, 214, 61, 0.16);
+  box-shadow: 0 0 0 2px rgba(255, 214, 61, 0.4);
+}
+.char-cell.locked {
+  opacity: 0.9;
+}
+.char-cell.locked canvas {
+  filter: grayscale(0.85) brightness(0.7);
+}
+.char-name {
+  font-size: clamp(11px, 3.4cqw, 13px);
+  font-weight: 700;
+}
+.char-badge {
+  font-size: clamp(9px, 2.6cqw, 11px);
+  font-weight: 900;
+  color: #1b1030;
+  background: var(--accent2);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: clamp(10px, 3cqw, 12px);
+  font-weight: 900;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.select-note {
+  font-size: clamp(11px, 3.4cqw, 13px);
+  opacity: 0.8;
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+/* --- ゲームオーバーのアンロック演出 --- */
+.unlock-banner {
+  font-size: clamp(12px, 4cqw, 15px);
+  font-weight: 900;
+  color: var(--accent2);
+  text-align: center;
+}
+.unlock-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.unlock-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: clamp(10px, 3cqw, 12px);
+  font-weight: 700;
+  color: var(--text);
+}

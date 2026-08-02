@@ -79,6 +79,49 @@ describe("microgames lifecycle", () => {
   }
 });
 
+describe("characters + profile store", () => {
+  it("has at least 8 distinct animals whose draw() never throws", async () => {
+    const { CHARACTERS } = await import("../engine/characters");
+    expect(CHARACTERS.length).toBeGreaterThanOrEqual(8);
+    const ids = new Set(CHARACTERS.map((c) => c.id));
+    expect(ids.size).toBe(CHARACTERS.length); // ID重複なし
+    const ctx = stubCtx();
+    for (const c of CHARACTERS) {
+      expect(c.name.length).toBeGreaterThan(0);
+      expect(() => {
+        c.draw(ctx, 60, 60, 22, {});
+        c.draw(ctx, 60, 60, 22, { happy: false, look: -1 });
+      }).not.toThrow();
+    }
+  });
+
+  it("locks characters until enough coins, then unlocks & selects", async () => {
+    const p = await import("../engine/profile");
+    // 初期状態：コイン0、デフォルトはコスト0のキャラ
+    expect(p.getCoins()).toBe(0);
+    expect(p.getSelectedCharacter().cost).toBe(0);
+    expect(p.isUnlocked(p.getSelectedId())).toBe(true);
+
+    // コスト>0のキャラを探す（最初はロックされている）
+    const { CHARACTERS } = await import("../engine/characters");
+    const paid = CHARACTERS.filter((c) => c.cost > 0).sort((a, b) => a.cost - b.cost);
+    expect(paid.length).toBeGreaterThan(0);
+    const target = paid[paid.length - 1]; // 一番高いキャラ
+    expect(p.isUnlocked(target.id)).toBe(false);
+    expect(p.setSelectedCharacterId(target.id)).toBe(false); // ロック中は選べない
+
+    // コインをためるとアンロックされ、選べるようになる
+    const newly = p.addCoins(target.cost);
+    expect(newly.map((c) => c.id)).toContain(target.id);
+    expect(p.isUnlocked(target.id)).toBe(true);
+    expect(p.setSelectedCharacterId(target.id)).toBe(true);
+    expect(p.getSelectedId()).toBe(target.id);
+
+    // すでにアンロック済みなら再度たしても新規アンロックは無し
+    expect(p.addCoins(1)).toEqual([]);
+  });
+});
+
 // 常に即クリア／即ミスするスタブで、エンジンの遷移を検証
 function stubDef(id: string, result: "cleared" | "failed"): MicrogameDef {
   return {
