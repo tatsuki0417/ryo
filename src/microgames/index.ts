@@ -23,6 +23,15 @@ import { GoodBadFalling, MemoryFlash, SwatTap, TapMovingOnce } from "./tap2";
 import { ArrowRush, DodgeBeam, SlingAim } from "./swipe2";
 import { FlappyTap, PumpBalloon } from "./timing2";
 import { HigherNumber, RockPaperScissors, Stroop } from "./judge2";
+import {
+  AlphabetOrder,
+  ColorSampleMatch,
+  CountMore,
+  HiraganaFind,
+  MathPick,
+  NumberOrder,
+  ShapeMatch,
+} from "./learn";
 import { BossArrowStorm, BossSurvive, BossWhackRush } from "./boss";
 
 function def(id: string, genre: Genre, make: () => Microgame): MicrogameDef {
@@ -82,6 +91,15 @@ export const MICROGAMES: MicrogameDef[] = [
   def("rock-paper-scissors", "judge", () => new RockPaperScissors()),
   def("higher-number", "judge", () => new HigherNumber()),
   def("stroop", "judge", () => new Stroop()),
+  // --- 知育（子ども向け学習）系 ---
+  def("hiragana-find", "learn", () => new HiraganaFind()),
+  def("count-more", "learn", () => new CountMore()),
+  def("add-pick", "learn", () => new MathPick(false)),
+  def("sub-pick", "learn", () => new MathPick(true)),
+  def("shape-match", "learn", () => new ShapeMatch()),
+  def("color-match", "learn", () => new ColorSampleMatch()),
+  def("number-order", "learn", () => new NumberOrder()),
+  def("alphabet-order", "learn", () => new AlphabetOrder()),
 ];
 
 // ボスゲーム（数レベルごとに1本）

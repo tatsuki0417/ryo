@@ -56,7 +56,7 @@ export interface Microgame {
 }
 
 // ミニゲームのジャンル（同ジャンルの連続出題を避けるために使う）
-export type Genre = "action" | "reflex" | "timing" | "judge" | "collect";
+export type Genre = "action" | "reflex" | "timing" | "judge" | "collect" | "learn";
 
 // 毎ラウンド新しいインスタンスを生成するためのファクトリ
 export interface MicrogameDef {
