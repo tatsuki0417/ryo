@@ -5,7 +5,6 @@ import GameOverScreen from "./ui/GameOverScreen";
 import CharacterSelect from "./ui/CharacterSelect";
 import { isMuted, setMuted, unlockAudio } from "./engine/audio";
 import { addCoins, getCoins } from "./engine/profile";
-import type { AnimalCharacter } from "./engine/characters";
 
 type Screen = "title" | "playing" | "gameover" | "select";
 
@@ -35,7 +34,6 @@ export default function App() {
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [coins, setCoins] = useState<number>(getCoins);
-  const [newlyUnlocked, setNewlyUnlocked] = useState<AnimalCharacter[]>([]);
 
   const toggleMute = useCallback(() => {
     const next = !isMuted();
@@ -47,7 +45,6 @@ export default function App() {
   const start = useCallback(() => {
     unlockAudio();
     setIsNewRecord(false);
-    setNewlyUnlocked([]);
     setScreen("playing");
   }, []);
 
@@ -60,10 +57,9 @@ export default function App() {
         saveHighScore(finalScore);
       }
       setIsNewRecord(record);
-      // スコアぶんのコインをためて、あらたなアンロックがあれば祝う
-      const unlocked = addCoins(finalScore);
+      // スコアぶんのコインをためる（きせかえの購入につかえる）
+      addCoins(finalScore);
       setCoins(getCoins());
-      setNewlyUnlocked(unlocked);
       setScreen("gameover");
     },
     [highScore]
@@ -103,7 +99,6 @@ export default function App() {
           score={score}
           highScore={highScore}
           isNewRecord={isNewRecord}
-          unlocked={newlyUnlocked}
           onRetry={start}
           onTitle={backToTitle}
         />

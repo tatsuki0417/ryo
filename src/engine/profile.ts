@@ -1,5 +1,5 @@
-// プレイヤーのプロフィール（えらんだキャラ・ためたコイン）を localStorage に保存する。
-// コインはるいけい制。あそぶほどたまり、しきい値に達したキャラが自動でアンロックされる。
+// プレイヤーのプロフィール（えらんだキャラ・ためたコイン・かったキャラ）を localStorage に保存する。
+// コインは「つかう」方式：あそんでためたコインで、すきなどうぶつを こうかん(購入)してアンロックする。
 // App.tsx と同じく、ストレージが使えない環境でも動くよう try/catch でガードする。
 import {
   CHARACTERS,
@@ -11,6 +11,7 @@ import {
 
 const SEL_KEY = "minige-matsuri.character";
 const COIN_KEY = "minige-matsuri.coins";
+const OWN_KEY = "minige-matsuri.owned";
 
 function loadStr(key: string, fallback: string): string {
   try {
@@ -27,6 +28,18 @@ function loadNum(key: string): number {
     return 0;
   }
 }
+function loadOwned(): Set<string> {
+  try {
+    const raw = localStorage.getItem(OWN_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr.filter((x) => typeof x === "string"));
+    }
+  } catch {
+    /* こわれた/使えない場合は空 */
+  }
+  return new Set();
+}
 function save(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
@@ -36,30 +49,46 @@ function save(key: string, value: string): void {
 }
 
 let coins = loadNum(COIN_KEY);
+// こうにゅう済みキャラ（無料キャラ cost=0 は最初から所有）
+const owned = loadOwned();
 let selectedId = loadStr(SEL_KEY, DEFAULT_CHARACTER_ID);
-// 保存されていたキャラがアンロック条件を満たしていなければデフォルトに戻す
-if (coins < getCharacter(selectedId).cost) selectedId = DEFAULT_CHARACTER_ID;
+// 保存されていたキャラを持っていなければデフォルトに戻す
+if (!isUnlocked(selectedId)) selectedId = DEFAULT_CHARACTER_ID;
 
 export function getCoins(): number {
   return coins;
 }
 
+/** 無料キャラ or こうにゅう済みなら true */
 export function isUnlocked(id: string): boolean {
-  return coins >= getCharacter(id).cost;
+  return getCharacter(id).cost <= 0 || owned.has(id);
 }
 
-/** るいけいコインに応じてアンロック済みのキャラ一覧 */
+/** 所有(＝えらべる)キャラ一覧 */
 export function unlockedCharacters(): AnimalCharacter[] {
-  return CHARACTERS.filter((c) => coins >= c.cost);
+  return CHARACTERS.filter((c) => isUnlocked(c.id));
 }
 
-/** コインをたす。あらたにアンロックされたキャラの配列を返す（演出用） */
-export function addCoins(n: number): AnimalCharacter[] {
-  if (!Number.isFinite(n) || n <= 0) return [];
-  const before = coins;
+/** コインをためる（あそんだごほうび）。 */
+export function addCoins(n: number): void {
+  if (!Number.isFinite(n) || n <= 0) return;
   coins += Math.floor(n);
   save(COIN_KEY, String(coins));
-  return CHARACTERS.filter((c) => before < c.cost && coins >= c.cost);
+}
+
+/**
+ * コインをつかってキャラをこうかん(購入)する。
+ * 成功したら true（コインを消費してアンロック）。所有済み or コイン不足なら false。
+ */
+export function buyCharacter(id: string): boolean {
+  const c = getCharacter(id);
+  if (isUnlocked(id)) return false; // すでに持っている
+  if (coins < c.cost) return false; // コインがたりない
+  coins -= c.cost;
+  owned.add(id);
+  save(COIN_KEY, String(coins));
+  save(OWN_KEY, JSON.stringify([...owned]));
+  return true;
 }
 
 export function getSelectedId(): string {
@@ -70,7 +99,7 @@ export function getSelectedCharacter(): AnimalCharacter {
   return getCharacter(selectedId);
 }
 
-/** アンロック済みのときだけ選択を切りかえる。成功したら true */
+/** 所有しているときだけ選択を切りかえる。成功したら true */
 export function setSelectedCharacterId(id: string): boolean {
   if (!isUnlocked(id)) return false;
   selectedId = id;

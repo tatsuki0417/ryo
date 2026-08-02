@@ -316,6 +316,11 @@ body {
   border-radius: 999px;
   padding: 1px 6px;
 }
+/* コインが足りていて こうかんできるキャラは金色で強調 */
+.lock.ok {
+  color: #1b1030;
+  background: var(--accent2);
+}
 .select-note {
   font-size: clamp(11px, 3.4cqw, 13px);
   opacity: 0.8;

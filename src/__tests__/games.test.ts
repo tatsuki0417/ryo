@@ -95,7 +95,7 @@ describe("characters + profile store", () => {
     }
   });
 
-  it("locks characters until enough coins, then unlocks & selects", async () => {
+  it("locks characters, buys them with coins (spending), then selects", async () => {
     const p = await import("../engine/profile");
     // 初期状態：コイン0、デフォルトはコスト0のキャラ
     expect(p.getCoins()).toBe(0);
@@ -108,17 +108,21 @@ describe("characters + profile store", () => {
     expect(paid.length).toBeGreaterThan(0);
     const target = paid[paid.length - 1]; // 一番高いキャラ
     expect(p.isUnlocked(target.id)).toBe(false);
-    expect(p.setSelectedCharacterId(target.id)).toBe(false); // ロック中は選べない
+    expect(p.setSelectedCharacterId(target.id)).toBe(false); // 持ってないと選べない
+    expect(p.buyCharacter(target.id)).toBe(false); // コイン不足では買えない
 
-    // コインをためるとアンロックされ、選べるようになる
-    const newly = p.addCoins(target.cost);
-    expect(newly.map((c) => c.id)).toContain(target.id);
+    // コインをためて購入 → コインが消費されてアンロック
+    p.addCoins(target.cost + 5);
+    expect(p.getCoins()).toBe(target.cost + 5);
+    expect(p.buyCharacter(target.id)).toBe(true);
+    expect(p.getCoins()).toBe(5); // 購入ぶんが消費された
     expect(p.isUnlocked(target.id)).toBe(true);
     expect(p.setSelectedCharacterId(target.id)).toBe(true);
     expect(p.getSelectedId()).toBe(target.id);
 
-    // すでにアンロック済みなら再度たしても新規アンロックは無し
-    expect(p.addCoins(1)).toEqual([]);
+    // すでに所有していれば もう買えない（コインは減らない）
+    expect(p.buyCharacter(target.id)).toBe(false);
+    expect(p.getCoins()).toBe(5);
   });
 });
 
