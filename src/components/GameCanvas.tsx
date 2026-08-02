@@ -25,8 +25,10 @@ export default function GameCanvas({ onGameOver }: Props) {
     const engine = new GameEngine(MICROGAMES, BOSS_GAMES, {
       onGameOver: (score) => overRef.current(score),
     });
-    // 自動テスト用にエンジンを公開
-    (window as unknown as { __engine?: GameEngine }).__engine = engine;
+    // 自動テスト/デバッグ用にエンジンを公開（開発ビルドのみ）
+    if (import.meta.env.DEV) {
+      (window as unknown as { __engine?: GameEngine }).__engine = engine;
+    }
 
     const input = new InputManager(canvas);
     input.onEvent((e) => engine.handleInput(e));
@@ -69,7 +71,9 @@ export default function GameCanvas({ onGameOver }: Props) {
       ro.disconnect();
       input.destroy();
       stopMusic();
-      delete (window as unknown as { __engine?: GameEngine }).__engine;
+      if (import.meta.env.DEV) {
+        delete (window as unknown as { __engine?: GameEngine }).__engine;
+      }
     };
   }, []);
 

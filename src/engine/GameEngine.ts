@@ -64,6 +64,7 @@ export class GameEngine {
   private pendingLevelUp = false;
   private bossPending = false;
   private isBossRound = false;
+  private isLearnRound = false;
   private queue: MicrogameDef[] = [];
   private bossQueue: BossDef[] = [];
   private lastGenre: Genre | null = null;
@@ -115,7 +116,9 @@ export class GameEngine {
   }
 
   private makeApi(): MicrogameApi {
-    const speed = 1 + (this.level - 1) * 0.16;
+    const raw = 1 + (this.level - 1) * 0.16;
+    // 知育（learn）は小さな子でも遊べるよう、加速を抑える
+    const speed = this.isLearnRound ? Math.min(raw, 1.15) : raw;
     return {
       w: LOGICAL_W,
       h: LOGICAL_H,
@@ -139,14 +142,18 @@ export class GameEngine {
   private beginIntro(): void {
     this.isBossRound = this.bossPending;
     this.bossPending = false;
+    this.isLearnRound = false;
     if (this.isBossRound) {
       this.curDur = Math.min(9, playDur(this.level) * 1.7);
       this.current = this.nextBoss().make();
       this.shake(7, 0.35);
       sfx.boss();
     } else {
-      this.curDur = playDur(this.level);
-      this.current = this.nextDef().make();
+      const def = this.nextDef();
+      this.isLearnRound = def.genre === "learn";
+      // 知育は制限時間を長めに固定して、あせらず取り組めるように
+      this.curDur = this.isLearnRound ? Math.max(playDur(this.level), 6.5) : playDur(this.level);
+      this.current = def.make();
     }
     this.current.init(this.makeApi());
     this.introTime = introDur(this.level, this.isBossRound);
