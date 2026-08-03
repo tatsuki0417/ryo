@@ -126,6 +126,16 @@ describe("characters + profile store", () => {
   });
 });
 
+describe("rewarded ad (stub)", () => {
+  it("報酬コインは正で、スタブは true を返す", async () => {
+    const ads = await import("../engine/ads");
+    expect(ads.REWARD_COINS).toBeGreaterThan(0);
+    expect(ads.isStubAds()).toBe(true); // 本番SDK未接続＝テスト用スタブ
+    expect(ads.isRewardedReady()).toBe(true);
+    await expect(ads.showRewardedAd()).resolves.toBe(true);
+  });
+});
+
 // 常に即クリア／即ミスするスタブで、エンジンの遷移を検証
 function stubDef(id: string, result: "cleared" | "failed"): MicrogameDef {
   return {

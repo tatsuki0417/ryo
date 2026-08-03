@@ -110,6 +110,7 @@ export default function App() {
           score={score}
           highScore={highScore}
           isNewRecord={isNewRecord}
+          onReward={() => setCoins(getCoins())}
           onRetry={start}
           onTitle={backToTitle}
         />
