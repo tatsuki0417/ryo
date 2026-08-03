@@ -1,10 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import GameCanvas from "./components/GameCanvas";
 import TitleScreen from "./ui/TitleScreen";
 import GameOverScreen from "./ui/GameOverScreen";
 import CharacterSelect from "./ui/CharacterSelect";
 import { isMuted, setMuted, unlockAudio } from "./engine/audio";
-import { addCoins, getCoins } from "./engine/profile";
+import { addCoins, claimDailyBonus, getCoins, type DailyBonus } from "./engine/profile";
 
 type Screen = "title" | "playing" | "gameover" | "select";
 
@@ -34,6 +34,16 @@ export default function App() {
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [coins, setCoins] = useState<number>(getCoins);
+  const [bonus, setBonus] = useState<DailyBonus | null>(null);
+
+  // 起動時に1日1回のログインボーナスを受け取る
+  useEffect(() => {
+    const b = claimDailyBonus();
+    if (b.amount > 0) {
+      setBonus(b);
+      setCoins(getCoins());
+    }
+  }, []);
 
   const toggleMute = useCallback(() => {
     const next = !isMuted();
@@ -89,6 +99,7 @@ export default function App() {
         <TitleScreen
           highScore={highScore}
           coins={coins}
+          bonus={bonus}
           onStart={start}
           onCustomize={openCustomize}
         />

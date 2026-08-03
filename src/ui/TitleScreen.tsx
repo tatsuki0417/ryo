@@ -1,15 +1,16 @@
 import Mascot from "./Mascot";
-import { getSelectedId } from "../engine/profile";
+import { getSelectedId, type DailyBonus } from "../engine/profile";
 import { CHARACTERS } from "../engine/characters";
 
 interface Props {
   highScore: number;
   coins: number;
+  bonus?: DailyBonus | null;
   onStart: () => void;
   onCustomize: () => void;
 }
 
-export default function TitleScreen({ highScore, coins, onStart, onCustomize }: Props) {
+export default function TitleScreen({ highScore, coins, bonus, onStart, onCustomize }: Props) {
   // 中央はいま選んでいるどうぶつ。両どなりはちがうどうぶつをそえて にぎやかに。
   const selId = getSelectedId();
   const others = CHARACTERS.filter((c) => c.id !== selId).slice(0, 2);
@@ -33,6 +34,11 @@ export default function TitleScreen({ highScore, coins, onStart, onCustomize }: 
         {highScore > 0 && <span className="hi">ハイスコア {highScore}</span>}
         <span className="coin-wallet">🪙 {coins}</span>
       </div>
+      {bonus && bonus.amount > 0 && (
+        <div className="bonus-banner">
+          🎁 {bonus.first ? "はじめてボーナス" : "ログインボーナス"} 🪙+{bonus.amount}！
+        </div>
+      )}
       <button className="btn" onClick={onStart}>
         スタート
       </button>

@@ -12,6 +12,10 @@ import {
 const SEL_KEY = "minige-matsuri.character";
 const COIN_KEY = "minige-matsuri.coins";
 const OWN_KEY = "minige-matsuri.owned";
+const BONUS_KEY = "minige-matsuri.lastbonus";
+
+const FIRST_BONUS = 30; // はじめてボーナス（すぐ うさぎ を買える額）
+const DAILY_BONUS = 20; // 毎日のログインボーナス
 
 function loadStr(key: string, fallback: string): string {
   try {
@@ -74,6 +78,28 @@ export function addCoins(n: number): void {
   if (!Number.isFinite(n) || n <= 0) return;
   coins += Math.floor(n);
   save(COIN_KEY, String(coins));
+}
+
+export interface DailyBonus {
+  /** もらったコイン数（0なら今日はもう受け取り済み） */
+  amount: number;
+  /** はじめてのボーナスか */
+  first: boolean;
+}
+
+/**
+ * 1日1回のログインボーナス。初回は多め。今日すでに受け取っていれば amount=0。
+ * 起動時に呼ぶ。
+ */
+export function claimDailyBonus(): DailyBonus {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const last = loadStr(BONUS_KEY, "");
+  if (last === today) return { amount: 0, first: false };
+  const first = last === "";
+  const amount = first ? FIRST_BONUS : DAILY_BONUS;
+  addCoins(amount);
+  save(BONUS_KEY, today);
+  return { amount, first };
 }
 
 /**
